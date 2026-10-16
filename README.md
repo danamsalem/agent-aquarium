@@ -1,10 +1,10 @@
-# Agent Fishtank
+# Agent Aquarium
 
 **Your agents keep working. Don't tap the glass.**
 
-Agent Fishtank is a lock screen for your Mac that shows what your AI coding agents are doing while you're away. Your Mac stays locked, your agents keep going, and everyone walking past can see that you are in fact working rather than assuming you took the 7th coffee break today.
+Agent Aquarium is a lock screen for your Mac that shows what your AI coding agents are doing while you're away. Your Mac stays locked, your agents keep going, and everyone walking past can see that you are in fact working rather than assuming you took the 7th coffee break today.
 
-**Website:** [agentfishtank.danamsalem.com](https://agentfishtank.danamsalem.com)
+**Website:** [agentaquarium.danamsalem.com](https://agentaquarium.danamsalem.com)
 
 ## What it does
 
@@ -17,15 +17,15 @@ Agent Fishtank is a lock screen for your Mac that shows what your AI coding agen
 
 ## Download
 
-A free beta for macOS is coming soon and will be published here under [Releases](https://github.com/danamsalem/agent-fishtank/releases). Star or watch this repo to hear when it's out.
+A free beta for macOS is coming soon and will be published here under [Releases](https://github.com/danamsalem/agent-aquarium/releases). Star or watch this repo to hear when it's out.
 
 ## Feedback
 
-Found a bug or have an idea? [Open an issue](https://github.com/danamsalem/agent-fishtank/issues).
+Found a bug or have an idea? [Open an issue](https://github.com/danamsalem/agent-aquarium/issues).
 
 ## Privacy
 
-Read the [privacy policy](https://agentfishtank.danamsalem.com/privacy).
+Read the [privacy policy](https://agentaquarium.danamsalem.com/privacy).
 
 ---
 
