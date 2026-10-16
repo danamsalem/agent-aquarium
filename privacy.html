@@ -46,6 +46,8 @@
     <ul>
       <li><strong>Agent activity.</strong> Status updates from your coding agents' hooks: session state (working, waiting, done), a short description of the current step, the project folder name and the agent's task list. Each session's record is deleted when the session ends, or after 24 hours.</li>
       <li><strong>Your settings.</strong> Your theme, your custom message, your saved message presets and your display options.</li>
+      <li><strong>Claude plan usage.</strong> If you turn on plan usage, the app sets a status line command in Claude Code's settings (~/.claude/settings.json) that reads the usage figures Claude Code already shows there: how much of your 5-hour and weekly limits you've used, and when they reset. It saves only those figures, then runs your own status line unchanged. Turning plan usage off, or uninstalling, puts your previous status line back.</li>
+      <li><strong>Battery measurements.</strong> While your Mac runs on battery, the app reads its power draw from macOS every few seconds and keeps up to 14 days of these readings, labeled with whether the lock screen was showing and in which theme, to estimate what the lock screen costs your battery.</li>
       <li><strong>Calendar links.</strong> Any iCal (.ics) address you add for Apple, Outlook or other calendars. These links are stored in a settings file that only your macOS user account can read, and are never shown on the lock screen.</li>
       <li><strong>Google sign-in.</strong> If you sign in with Google, the access and refresh tokens Google issues, your Google account's email address, and the names of your calendars with which ones you chose to show are stored in a file that only your macOS user account can read.</li>
     </ul>
