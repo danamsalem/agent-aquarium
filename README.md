@@ -17,7 +17,9 @@ Agent Aquarium is a lock screen for your Mac that shows what your AI coding agen
 
 ## Download
 
-A free beta for macOS is coming soon and will be published here under [Releases](https://github.com/danamsalem/agent-aquarium/releases). Star or watch this repo to hear when it's out.
+**[Download the free beta (0.9.0)](https://github.com/danamsalem/agent-aquarium/releases/latest)** for Macs with Apple silicon (M1 or later), macOS 13 or later, with Claude Code.
+
+The beta isn't notarized by Apple yet, so macOS asks you to allow it the first time you open it. The release notes walk you through it. Star or watch this repo to hear about new versions.
 
 ## Feedback
 
