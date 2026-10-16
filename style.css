@@ -51,8 +51,10 @@ header { z-index: 2; } /* its menu opens over the page */
 .badge { display: inline-block; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass); color: var(--muted); font-size: 13px; letter-spacing: .02em; }
 a.badge { text-decoration: none; }
 a.badge:hover { color: var(--fg); }
-.hero h1 { margin: 18px auto 0; max-width: 16ch; font-size: clamp(40px, 7.5vw, 84px); line-height: 1.02; letter-spacing: -.035em; font-weight: 750; text-wrap: balance; }
-.hero h1 em { font-style: normal; color: var(--accent); }
+.hero h1 { margin: 22px auto 0; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .22em; font-size: clamp(40px, 7.5vw, 84px); line-height: 1.02; letter-spacing: -.035em; font-weight: 750; }
+.hero h1 img { width: 1.25em; height: 1.25em; filter: drop-shadow(0 10px 24px rgba(0, 0, 0, .35)); }
+.hero .tagline { margin: 16px auto 0; max-width: 22ch; font-size: clamp(24px, 3.6vw, 40px); line-height: 1.12; letter-spacing: -.025em; font-weight: 700; text-wrap: balance; }
+.hero .tagline em { font-style: normal; color: var(--accent); }
 .hero p { margin: 20px auto 0; max-width: 58ch; color: var(--muted); font-size: clamp(17px, 2vw, 20px); text-wrap: pretty; }
 .cta { margin-top: 30px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; font-weight: 650; text-decoration: none; border: 1px solid var(--line); color: var(--fg); background: var(--glass); }
