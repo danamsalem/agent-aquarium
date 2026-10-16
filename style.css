@@ -32,6 +32,8 @@ main, header, footer { position: relative; z-index: 1; }
 /* hero */
 .hero { padding: clamp(40px, 9vh, 96px) 0 clamp(36px, 7vh, 72px); text-align: center; }
 .badge { display: inline-block; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--glass); color: var(--muted); font-size: 13px; letter-spacing: .02em; }
+a.badge { text-decoration: none; }
+a.badge:hover { color: var(--fg); }
 .hero h1 { margin: 18px auto 0; max-width: 16ch; font-size: clamp(40px, 7.5vw, 84px); line-height: 1.02; letter-spacing: -.035em; font-weight: 750; text-wrap: balance; }
 .hero h1 em { font-style: normal; color: var(--accent); }
 .hero p { margin: 20px auto 0; max-width: 58ch; color: var(--muted); font-size: clamp(17px, 2vw, 20px); text-wrap: pretty; }
