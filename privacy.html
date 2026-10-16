@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy · Agent Fishtank</title>
+<meta name="description" content="How Agent Fishtank handles your data: everything stays on your Mac, calendar access is read-only, and nothing is sent to us.">
+<meta name="theme-color" content="#04121f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='6' width='26' height='21' rx='5' fill='%23072a3d' stroke='%235fd3c6' stroke-width='2'/%3E%3Cpath d='M4 13c4-2 8 2 12 0s8-2 12 0' stroke='%235fd3c6' stroke-width='1.6' fill='none'/%3E%3Ccircle cx='21' cy='19' r='2.4' fill='%23ff8a5c'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="wrap nav">
+  <a class="logo" href="./" aria-label="Agent Fishtank home">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="6" width="26" height="21" rx="5" fill="#072a3d" stroke="#5fd3c6" stroke-width="2"/><path d="M4 13c4-2 8 2 12 0s8-2 12 0" stroke="#5fd3c6" stroke-width="1.6" fill="none"/><circle cx="21" cy="19" r="2.4" fill="#ff8a5c"/><circle cx="11" cy="20" r="1.2" fill="#e8f4f6" opacity=".6"/></svg>
+    Agent Fishtank
+  </a>
+  <nav><a href="./">Home</a></nav>
+</header>
+
+<main class="wrap page">
+  <article class="doc">
+    <h1>Privacy Policy</h1>
+    <p class="updated">Effective October 16, 2026</p>
+
+    <div class="summary">
+      <strong>The short version</strong>
+      <ul>
+        <li>Agent Fishtank runs entirely on your Mac. We don't run servers, and we never receive your data.</li>
+        <li>Google Calendar access is read-only and used only to show your current and next meeting on your lock screen.</li>
+        <li>No accounts, no analytics, no ads, no tracking, and we never sell or share your data.</li>
+      </ul>
+    </div>
+
+    <h2>What Agent Fishtank is</h2>
+    <p>Agent Fishtank ("the app", "we") is a macOS screensaver and settings app that shows the status of AI coding agents, such as Claude Code, while your Mac is locked. It also shows a custom message you choose and, if you connect a calendar, your current and next meeting.</p>
+
+    <h2>Information the app uses</h2>
+    <p>All of the following is stored only on your Mac, in your user folder, and is used only to draw your lock screen:</p>
+    <ul>
+      <li><strong>Agent activity.</strong> Status updates from your coding agents' hooks: session state (working, waiting, done), a short description of the current step, the project folder name and the agent's task list. Each session's record is deleted when the session ends, or after 24 hours.</li>
+      <li><strong>Your settings.</strong> Your theme, your custom message, your saved message presets and your display options.</li>
+      <li><strong>Calendar links.</strong> Any iCal (.ics) address you add for Apple, Outlook or other calendars. These links are stored in a settings file that only your macOS user account can read, and are never shown on the lock screen.</li>
+      <li><strong>Google sign-in.</strong> If you sign in with Google, the access and refresh tokens Google issues, your Google account's email address, and the names of your calendars with which ones you chose to show are stored in a file that only your macOS user account can read.</li>
+    </ul>
+
+    <h2>Google user data</h2>
+    <p>If you choose <em>Sign in with Google</em>, the app asks for one permission: <code>https://www.googleapis.com/auth/calendar.readonly</code> (view your calendars). With it, the app reads:</p>
+    <ul>
+      <li>your list of calendars, so you can choose which ones to show, and the address of your primary calendar, so the app can show which account is connected;</li>
+      <li>events from the calendars you select, for a short window from one day ago to three days ahead: the title, start and end time, status, whether the event is marked busy or free, the event type, and your own response (so declined meetings are hidden).</li>
+    </ul>
+    <p><strong>How it's used:</strong> only to show "In a meeting until…" and your next meeting on your own lock screen and in the settings app. Event details are kept in memory and refreshed every few minutes; they aren't written to disk.</p>
+    <p><strong>Sharing:</strong> Google user data never leaves your Mac. It is not sent to us or to any third party, not used for advertising, not sold, and not used to train AI or machine-learning models. The app never creates, changes or deletes anything in your Google account.</p>
+    <p><strong>Limited Use:</strong> Agent Fishtank's use and transfer of information received from Google APIs adheres to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+    <p><strong>Removing access:</strong> click <em>Sign out</em> in the app's Calendar settings. This deletes the stored tokens from your Mac and revokes them with Google. You can also remove access at any time at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</p>
+
+    <h2>Network connections</h2>
+    <p>The app doesn't send anything to us. It connects only to:</p>
+    <ul>
+      <li>Google's sign-in and Calendar services, if you sign in with Google;</li>
+      <li>the calendar addresses you add yourself;</li>
+      <li>Google Fonts, to load the typefaces some themes use. Like any website request, this shares your IP address with Google; see <a href="https://developers.google.com/fonts/faq/privacy">Google Fonts privacy</a>.</li>
+    </ul>
+    <p>The status display runs on a local server that only accepts connections from your own Mac.</p>
+
+    <h2>Deleting your data</h2>
+    <p>Sign out of Google and remove calendar links in the app's settings. Uninstalling the app removes its background service and screensaver; to remove everything it stored, also delete the app's data folder in your user folder (<code>~/.claude/lockscreen</code> in the current beta).</p>
+
+    <h2>Children</h2>
+    <p>The app is a developer tool and isn't directed at children under 13.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, we'll update this page and the effective date above. If a change affects how Google user data is used, we'll describe it in the app's release notes before it takes effect.</p>
+
+    <h2>Contact</h2>
+    <p>Questions or requests: open an issue at <a href="https://github.com/danamsalem/agent-fishtank/issues">github.com/danamsalem/agent-fishtank</a>.</p>
+  </article>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Agent Fishtank. Not affiliated with Anthropic or Google.</span>
+    <span><a href="./">Home</a></span>
+  </div>
+</footer>
+</body>
+</html>
