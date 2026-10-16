@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Agent Fishtank</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a3550"/>
+      <stop offset="1" stop-color="#04121f"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fd3c6" stop-opacity=".30"/>
+      <stop offset="1" stop-color="#5fd3c6" stop-opacity=".08"/>
+    </linearGradient>
+    <clipPath id="inside"><rect x="100" y="138" width="312" height="262" rx="54"/></clipPath>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#tile)"/>
+  <!-- tank glass -->
+  <rect x="100" y="138" width="312" height="262" rx="54" fill="#04121f"/>
+  <g clip-path="url(#inside)">
+    <path d="M90 214c34-20 68-20 102 0s68 20 102 0 68-20 102 0 34 20 34 20V420H90z" fill="url(#water)"/>
+    <path d="M90 352c60-14 120-14 180-4s110 10 152 0V420H90z" fill="#5fd3c6" opacity=".22"/>
+  </g>
+  <path d="M104 214c30-18 60-18 92 0s68 20 102 0 68-20 102 0" fill="none" stroke="#5fd3c6" stroke-width="14" stroke-linecap="round"/>
+  <rect x="100" y="138" width="312" height="262" rx="54" fill="none" stroke="#5fd3c6" stroke-width="22"/>
+  <!-- lid -->
+  <rect x="82" y="104" width="348" height="30" rx="15" fill="#5fd3c6"/>
+  <!-- the hermit crab: spiral shell, claw and eye stalks peeking out -->
+  <g stroke="#ff8a5c" stroke-width="9" stroke-linecap="round" fill="none">
+    <path d="M214 342l2-36M236 346l8-32"/>
+  </g>
+  <path d="M196 350c8-18 44-20 58-4 6 8 2 18-8 20h-50z" fill="#ff8a5c"/>
+  <path d="M250 340c10-6 22-2 22 8s-12 12-20 6" fill="none" stroke="#ff8a5c" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="216" cy="302" r="9" fill="#e8f4f6"/><circle cx="219" cy="301" r="4" fill="#04121f"/>
+  <circle cx="245" cy="310" r="9" fill="#e8f4f6"/><circle cx="248" cy="309" r="4" fill="#04121f"/>
+  <g transform="translate(176 338)">
+    <circle r="34" fill="#e8f4f6"/>
+    <path d="M0 0c0-8 10-10 15-4 7 8 1 22-13 22C-14 18-22 4-17-9-11-24 12-28 25-15" fill="none" stroke="#072a3d" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <!-- bubbles -->
+  <circle cx="276" cy="270" r="9" fill="#e8f4f6" opacity=".55"/>
+  <circle cx="336" cy="252" r="32" fill="#ff8a5c"/>
+  <circle cx="325" cy="242" r="9" fill="#ffd2bf"/>
+  <circle cx="300" cy="216" r="7" fill="#e8f4f6" opacity=".45"/>
+</svg>
