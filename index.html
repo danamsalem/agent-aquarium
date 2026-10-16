@@ -18,7 +18,12 @@
     <img src="/logo.png" alt="" width="30" height="30">
     Agent Aquarium
   </a>
-  <nav><a class="hide-sm" href="#features">Features</a><a href="/privacy">Privacy</a></nav>
+  <nav><a class="hide-sm" href="#features">Features</a>
+    <details class="menu">
+      <summary aria-label="Menu"><span></span><span></span><span></span></summary>
+      <div class="menu-panel"><a href="/" aria-current="page">Home</a><a href="/#features">Features</a><a href="/privacy">Privacy policy</a><a href="/trademarks">Trademarks</a><a href="https://github.com/danamsalem/agent-aquarium">GitHub</a><a href="https://github.com/danamsalem/agent-aquarium/issues">Contact</a></div>
+    </details>
+  </nav>
 </header>
 
 <main>
@@ -31,22 +36,30 @@
       <a class="btn" href="#features">See what it does</a>
     </div>
 
-    <div class="tank" role="img" aria-label="Illustration of the Agent Aquarium lock screen: a message strip, the clock, session cards and a hermit crab walking along the sand">
-      <div class="msg">Back in 10, grabbing coffee ☕</div>
-      <div class="clock">14:32</div>
-      <div class="cards">
-        <div><b>api-server</b>Running the tests</div>
-        <div><b>web-app</b>Editing checkout.tsx</div>
+    <figure class="tank">
+      <div class="screen" id="screen">
+        <div class="stage" id="stage">
+          <iframe id="live" src="/demo/?display&amp;demo=working&amp;theme=warm&amp;text=Back%20in%2010,%20grabbing%20coffee" title="The Agent Aquarium lock screen, running live" tabindex="-1" loading="lazy"></iframe>
+          <div class="mac-lock" id="macLock" aria-hidden="true">
+            <div class="mac-clock"><div class="mac-date" id="macDate"></div><div class="mac-time" id="macTime"></div></div>
+            <div class="mac-login">
+              <div class="mac-pfp"><svg viewBox="0 0 64 64"><circle cx="32" cy="25" r="11"/><path d="M12 54c2-11 10-17 20-17s18 6 20 17"/></svg></div>
+              <div class="mac-name">Dan Amsalem</div>
+              <div class="mac-field">Enter Password</div>
+              <div class="mac-hint">Touch ID or Enter Password</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="center"><b>agents are <em>working</em></b><span>Step 4 of 6 · 12m 40s</span></div>
-      <div class="sand"></div>
-      <svg class="crab" viewBox="0 0 16 12" shape-rendering="crispEdges" aria-hidden="true">
-        <rect x="6" y="0" width="7" height="2" fill="#5fd3c6"/><rect x="5" y="2" width="9" height="4" fill="#5fd3c6"/><rect x="8" y="2" width="3" height="2" fill="#e8f4f6"/><rect x="9" y="3" width="1" height="1" fill="#5fd3c6"/>
-        <rect x="1" y="5" width="9" height="4" fill="#ff8a5c"/><rect x="0" y="4" width="2" height="2" fill="#ff8a5c"/><rect x="2" y="6" width="1" height="1" fill="#04121f"/><rect x="4" y="6" width="1" height="1" fill="#04121f"/>
-        <rect x="1" y="9" width="1" height="2" fill="#ff8a5c"/><rect x="4" y="9" width="1" height="2" fill="#ff8a5c"/><rect x="7" y="9" width="1" height="2" fill="#ff8a5c"/>
-      </svg>
-      <div class="glare"></div>
-    </div>
+      <figcaption>
+        <div class="seg" id="themes" aria-label="Theme">
+          <button data-theme="warm" aria-pressed="true">Warm</button><button data-theme="pixel" aria-pressed="false">Retro pixel</button><button data-theme="cosmic" aria-pressed="false">Cosmic</button><button data-theme="aquarium" aria-pressed="false">Aquarium</button>
+        </div>
+        <div class="seg" id="states" aria-label="Agent state">
+          <button data-demo="working" aria-pressed="true">Working</button><button data-demo="waiting" aria-pressed="false">Needs you</button><button data-demo="done" aria-pressed="false">Done</button>
+        </div>
+      </figcaption>
+    </figure>
   </section>
 
   <section class="wrap features" id="features">
@@ -64,12 +77,57 @@
 
 <footer>
   <div class="wrap">
-    <span>© 2026 Agent Aquarium. Works with Claude Code. Not affiliated with Anthropic, OpenAI or Google.</span>
+    <span>© 2026 Agent Aquarium, made by <a class="credit" href="https://github.com/danamsalem">Dan Amsalem</a>. Works with Claude Code. Not affiliated with Anthropic, OpenAI or Google.</span>
     <span><a href="/privacy">Privacy policy</a> · <a href="/trademarks">Trademarks</a> · <a href="https://github.com/danamsalem/agent-aquarium/issues">Contact</a></span>
   </div>
 </footer>
 
 <script>
+  // The demo is the real lock screen page (built by site-demo.js), drawn at a Mac screen's size and scaled to fit.
+  const live = document.getElementById("live"), tankScreen = document.getElementById("screen"), stage = document.getElementById("stage");
+  const SCREEN_W = 1440;
+  new ResizeObserver(() => stage.style.transform = `scale(${tankScreen.clientWidth / SCREEN_W})`).observe(tankScreen);
+
+  // Pointing at the screen is like touching a locked Mac: macOS draws its clock, your picture and the
+  // password field over the screensaver, and hides them 29.4 s after the last input. The page reacts the
+  // way it does in the app (setSystemLockUI): its clock makes room, the calendar slides up, the crab sneaks.
+  const LOCK_UI_TIMEOUT = 29400, macLock = document.getElementById("macLock");
+  let lastInput = 0, pointerIn = false, lockShown = false;
+  function setLockUI(on) {
+    if (on === lockShown) return;
+    lockShown = on;
+    macLock.classList.toggle("on", on);
+    live.contentWindow?.setSystemLockUI?.(on);
+  }
+  const touched = () => { lastInput = Date.now(); setLockUI(true); };
+  tankScreen.addEventListener("pointerenter", (e) => { pointerIn = e.pointerType === "mouse"; touched(); });
+  tankScreen.addEventListener("pointermove", touched);
+  tankScreen.addEventListener("pointerdown", touched);
+  tankScreen.addEventListener("pointerleave", (e) => { pointerIn = false; if (e.pointerType === "mouse") setLockUI(false); });
+  setInterval(() => { if (lockShown && Date.now() - lastInput >= LOCK_UI_TIMEOUT) setLockUI(false); }, 100);
+  live.addEventListener("load", () => { lockShown = false; if (pointerIn) touched(); });
+  // macOS's lock-screen clock: date above, hours and minutes without AM/PM.
+  function tickMacClock() {
+    const now = new Date();
+    document.getElementById("macDate").textContent = now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+    document.getElementById("macTime").textContent = new Intl.DateTimeFormat([], { hour: "numeric", minute: "2-digit" })
+      .formatToParts(now).filter((x) => x.type !== "dayPeriod").map((x) => x.value).join("").trim();
+  }
+  tickMacClock();
+  setInterval(tickMacClock, 1000);
+  function pick(group, attr, call) {
+    group.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      group.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      const w = live.contentWindow, v = b.dataset[attr];
+      if (w && typeof w[call] === "function") w[call](v, false);
+      else { const u = new URL(live.src); u.searchParams.set(attr, v); live.src = u.href; }
+    });
+  }
+  pick(document.getElementById("themes"), "theme", "setTheme");
+  pick(document.getElementById("states"), "demo", "setDemo");
+
   // A few slow bubbles; skipped when the visitor prefers reduced motion (the CSS hides them too).
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
     const box = document.getElementById("bubbles");
@@ -80,5 +138,6 @@
     }
   }
 </script>
+<script src="/menu.js" defer></script>
 </body>
 </html>

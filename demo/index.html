@@ -1,0 +1,1841 @@
+<!doctype html>
+<html lang="en" data-theme="warm">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Aquarium demo</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* ---------- theme tokens ---------- */
+:root[data-theme="warm"] {
+  --bg: #1f1e1d; --fg: #f0eee6; --muted: rgba(240,238,230,.56);
+  --accent-base: #d97757; --warn: #f2b350; --ok: #a8c9a0;
+  --card: rgba(255,255,255,.045); --card-border: rgba(240,238,230,.1); --card-shadow: none;
+  --head-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif; --body-font: ui-sans-serif, -apple-system, "Inter", sans-serif;
+  --h-size: clamp(44px, 9.8vw, 142px); --h-weight: 400; --h-track: -0.025em; --em-style: italic;
+  --radius: 14px; --body-size: 15px;
+}
+:root[data-theme="pixel"] {
+  --bg: #0d0c0b; --fg: #f3e9dc; --muted: #8a8378;
+  --accent-base: #ff7a4d; --warn: #ffd23f; --ok: #63f5a0;
+  --card: rgba(255,122,77,.06); --card-border: rgba(255,122,77,.35); --card-shadow: none;
+  --head-font: "Press Start 2P", ui-monospace, monospace; --body-font: "VT323", ui-monospace, monospace;
+  --h-size: clamp(22px, 5.2vw, 70px); --h-weight: 400; --h-track: 0; --em-style: normal;
+  --radius: 0; --body-size: 22px;
+}
+:root[data-theme="cosmic"] {
+  --bg: #090718; --fg: #f4f1ff; --muted: rgba(244,241,255,.6);
+  --accent-base: #ff9a76; --warn: #ffcf5c; --ok: #7ee0c3;
+  --card: rgba(255,255,255,.06); --card-border: rgba(255,255,255,.13); --card-shadow: 0 10px 40px -12px rgba(0,0,0,.5);
+  --head-font: "Space Grotesk", ui-sans-serif, sans-serif; --body-font: "Space Grotesk", ui-sans-serif, sans-serif;
+  --h-size: clamp(42px, 9vw, 126px); --h-weight: 700; --h-track: -0.035em; --em-style: normal;
+  --radius: 18px; --body-size: 15px;
+}
+:root[data-theme="aquarium"] {
+  --bg: #062a4a; --fg: #eaf7ff; --muted: rgba(234,247,255,.64);
+  --accent-base: #5fd3ff; --warn: #ffd166; --ok: #8ef0a8;
+  --card: rgba(255,255,255,.08); --card-border: rgba(255,255,255,.16); --card-shadow: 0 10px 30px -12px rgba(0,20,40,.45);
+  --head-font: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, sans-serif; --body-font: ui-rounded, "SF Pro Rounded", -apple-system, sans-serif;
+  --h-size: clamp(42px, 9.2vw, 130px); --h-weight: 600; --h-track: -0.03em; --em-style: normal;
+  --radius: 18px; --body-size: 15px;
+}
+body { --accent: var(--accent-base); }
+body[data-state="waiting"] { --accent: var(--warn); }
+body[data-state="done"] { --accent: var(--ok); }
+
+/* ---------- base ---------- */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: var(--body-size)/1.4 var(--body-font);
+  -webkit-font-smoothing: antialiased; user-select: none;
+}
+body.hide-cursor, body.hide-cursor * { cursor: none !important; }
+canvas#bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+/* Cosmic's slow sky: a quarter-res layer the compositor stretches, so it isn't redrawn every frame. */
+canvas#sky { position: fixed; inset: 0; width: 100%; height: 100%; display: none; }
+:root[data-theme="cosmic"] canvas#sky { display: block; }
+
+#ui {
+  position: fixed; inset: 0; z-index: 1; display: grid; grid-template-rows: auto 1fr;
+  padding: clamp(16px, 3vw, 40px) clamp(16px, 4vw, 56px);
+  padding-bottom: var(--lane); /* the crab's walking lane */
+  pointer-events: none;
+}
+:root { --side: clamp(16px, 4vw, 56px); --lane: clamp(84px, 11vh, 108px); }
+:root[data-theme="cosmic"] { --lane: clamp(16px, 3vw, 40px); }
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: .01em; }
+.brand svg, .brand .mark { width: 22px; height: 22px; }
+.brand .sub { color: var(--muted); font-weight: 400; }
+.brand .x { color: var(--muted); font-weight: 400; }
+.clock { text-align: right; }
+.clock .time {
+  font: var(--h-weight) clamp(28px, 5vw, 64px)/1 var(--head-font);
+  font-variant-numeric: tabular-nums; letter-spacing: var(--h-track);
+}
+.clock .date { margin-top: 6px; color: var(--muted); font-size: clamp(11px, 1.1vw, 14px); letter-spacing: .12em; text-transform: uppercase; }
+.head-right { display: flex; flex-direction: column; align-items: flex-end; gap: clamp(12px, 1.8vh, 18px); flex: none; }
+
+/* ---------- calendar card ---------- */
+#cal {
+  width: clamp(220px, 21vw, 290px); padding: 12px 15px 13px; border-radius: var(--radius); text-align: left;
+  background: var(--card); border: 1px solid var(--card-border); box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+#cal:empty { display: none; }
+#cal .k { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+#cal .k .when { margin-left: auto; letter-spacing: .02em; text-transform: none; font-weight: 500; font-variant-numeric: tabular-nums; }
+#cal .k .cdot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+#cal.busy .k { color: var(--fg); }
+#cal.busy .k .cdot { background: var(--warn); animation: pulse 2.4s ease-in-out infinite; }
+#cal.soon .k .cdot { background: var(--accent-base); }
+#cal.soon .k .when { color: var(--accent-base); font-weight: 600; }
+#cal .ttl { margin-top: 5px; font-weight: 600; font-size: clamp(14px, 1.25vw, 17px); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+#cal .sub { margin-top: 3px; color: var(--muted); font-size: .88em; font-variant-numeric: tabular-nums; }
+#cal .bar { margin-top: 9px; height: 3px; border-radius: 3px; background: var(--card-border); overflow: hidden; }
+#cal .bar i { display: block; height: 100%; background: var(--warn); border-radius: inherit; }
+#cal .nx { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--card-border); display: flex; gap: 8px; color: var(--muted); font-size: .88em; }
+#cal .nx b { color: var(--fg); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+#cal .nx span { flex: none; font-variant-numeric: tabular-nums; }
+#cal.quiet { padding: 9px 14px; }
+:root[data-theme="pixel"] #cal, :root[data-theme="pixel"] #cal .bar { border-radius: 0; }
+:root[data-theme="pixel"] #cal .k { font: 8px/1.6 "Press Start 2P", monospace; }
+:root[data-theme="pixel"] #cal .k .when { font: 18px/1 "VT323", monospace; }
+:root[data-theme="pixel"] #cal .ttl { font-size: 22px; font-weight: 400; }
+:root[data-theme="pixel"] #cal .cdot { border-radius: 0; }
+
+/* ---------- plan usage card (Claude's 5-hour and weekly limits, from the status line) ---------- */
+/* Under the clock, out of the header's flow (like #sessions on the left), so the header's height, and
+   with it the centered headline and task list, doesn't change with how many cards there are. */
+.head-right { position: relative; }
+#cards {
+  position: absolute; right: 0; top: calc(100% + clamp(12px, 1.8vh, 18px));
+  display: flex; flex-direction: column; align-items: flex-end; gap: clamp(10px, 1.4vh, 14px);
+}
+
+#usage {
+  width: clamp(220px, 21vw, 290px); padding: 11px 15px 12px; border-radius: var(--radius); text-align: left;
+  background: var(--card); border: 1px solid var(--card-border); box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+#usage:empty { display: none; }
+#usage .k { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+#usage .k .when { margin-left: auto; letter-spacing: .02em; text-transform: none; font-weight: 500; }
+#usage .row { margin-top: 8px; }
+#usage .l { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: .88em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#usage .l b { color: var(--fg); font-weight: 600; }
+#usage .bar { margin-top: 5px; height: 4px; border-radius: 3px; background: var(--card-border); overflow: hidden; }
+#usage .bar i { display: block; height: 100%; background: var(--accent-base); border-radius: inherit; }
+#usage .row.high .bar i { background: var(--warn); }
+#usage .row.high .l b { color: var(--warn); }
+:root[data-theme="pixel"] #usage, :root[data-theme="pixel"] #usage .bar { border-radius: 0; }
+:root[data-theme="pixel"] #usage .k { font: 8px/1.6 "Press Start 2P", monospace; }
+:root[data-theme="pixel"] #usage .k .when { font: 16px/1 "VT323", monospace; }
+:root[data-theme="pixel"] #usage .l { font-size: 18px; }
+
+/* The headline sits in the middle row, so it's what's centered: the starburst above it, the rest below.
+   centerHeadline() then puts that middle on the screen's center line (the header and the crab's lane differ). */
+main {
+  display: grid; grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr); justify-items: center;
+  text-align: center; row-gap: clamp(8px, 1.6vh, 18px); min-height: 0;
+}
+#heroSlot { align-self: end; }
+main .below { align-self: start; display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.6vh, 18px); }
+#heroSlot { width: clamp(96px, 20vmin, 230px); aspect-ratio: 1; flex: none; margin-bottom: clamp(4px, 2vh, 24px); }
+h1 {
+  font-family: var(--head-font); font-weight: var(--h-weight); font-size: var(--h-size);
+  line-height: 1.04; letter-spacing: var(--h-track); text-wrap: balance;
+}
+h1 em { color: var(--accent); font-style: var(--em-style); transition: color .6s ease; }
+#tagline { color: var(--accent); font-size: clamp(14px, 1.6vw, 20px); min-height: 1.5em; transition: color .6s ease; }
+#tagline .fade { display: inline-block; }
+#spin { display: none; }
+/* ---------- message strip ---------- */
+.head-left { display: flex; flex-direction: column; align-items: flex-start; gap: clamp(10px, 1.6vh, 16px); min-width: 0; }
+#note {
+  max-width: min(62vw, 760px);
+  display: flex; align-items: center; padding: 12px 22px;
+  border-radius: var(--radius); background: var(--note-bg); color: var(--note-fg);
+  box-shadow: 0 14px 40px -16px rgba(0,0,0,.55); border: var(--note-border, 0);
+}
+#note[hidden] { display: none; }
+#msg { position: relative; font: var(--note-weight, 500) clamp(18px, 2.2vw, 30px)/1.25 var(--head-font); letter-spacing: -0.01em; }
+#msg .word { display: inline-block; white-space: nowrap; }
+#msg .ch { display: inline-block; transform-origin: 50% 100%; text-align: center; }
+canvas#fx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+:root[data-theme="warm"] { --note-bg: #f0eee6; --note-fg: #1f1e1d; --note-weight: 400; }
+:root[data-theme="pixel"] { --note-bg: #1a1310; --note-fg: #ffd9c4; --note-border: 2px solid #ff7a4d; --note-weight: 400; }
+:root[data-theme="pixel"] #msg { font-size: clamp(14px, 1.8vw, 24px); line-height: 1.6; }
+:root[data-theme="cosmic"] { --note-bg: rgba(255,255,255,.93); --note-fg: #140c30; --note-weight: 600; }
+:root[data-theme="aquarium"] { --note-bg: rgba(240,250,255,.95); --note-fg: #06243f; --note-weight: 600; }
+:root[data-theme="aquarium"] h1 em { text-shadow: 0 0 28px color-mix(in srgb, var(--accent) 45%, transparent); }
+#nowline {
+  display: inline-flex; align-items: center; gap: .65em; max-width: min(92vw, 760px);
+  padding: .6em 1.1em; border-radius: 999px;
+  background: var(--card); border: 1px solid var(--card-border); box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  font-size: clamp(13px, 1.3vw, 16px); white-space: nowrap;
+}
+#nowline:empty { display: none; }
+#nowline .txt { overflow: hidden; text-overflow: ellipsis; }
+#nowline .sep { color: var(--muted); }
+#nowline .t { color: var(--muted); font-variant-numeric: tabular-nums; }
+.dot { width: .62em; height: .62em; border-radius: 50%; background: var(--accent); flex: none; }
+body[data-state="working"] .dot, body[data-state="waiting"] .dot { animation: pulse 1.4s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 .45em color-mix(in srgb, var(--accent) 0%, transparent); transform: scale(.85); } 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } }
+
+/* The agent's task list as a carousel of little cards under the headline: the current task lit, the next ones
+   fully readable after it, finished ones dimmed before it, and the row slides along as the agent moves to the
+   next task (stepCarousel). */
+#plan { width: min(92vw, 900px); }
+#plan:empty { display: none; }
+#plan .rail {
+  overflow: hidden; padding: 4px 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+#plan .track { display: flex; align-items: stretch; gap: 10px; width: max-content; will-change: transform; }
+#plan .tc {
+  display: flex; align-items: flex-start; gap: 8px; width: clamp(170px, 16vw, 230px); padding: 8px 13px; text-align: left;
+  border-radius: calc(var(--radius) * .75); background: var(--card); border: 1px solid var(--card-border);
+  font-size: clamp(12px, 1.15vw, 15px); line-height: 1.3; color: var(--muted);
+  transition: opacity .5s ease, transform .5s ease, border-color .5s ease;
+}
+#plan .tc .tx { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; } /* two lines, so a step's name reads in full */
+#plan .tc .ic { margin-top: .12em; }
+#plan .tc.pending { color: var(--fg); opacity: .82; }
+#plan .tc.completed { opacity: .42; }
+#plan .tc.completed .ic { color: var(--fg); opacity: .7; }
+#plan .tc.now { color: var(--fg); font-weight: 600; border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: 0 0 22px -6px color-mix(in srgb, var(--accent) 55%, transparent); }
+#plan .tc.now .ic { color: var(--accent); }
+#plan .ic { width: 1.05em; height: 1.05em; flex: none; display: block; }
+#plan .meta { margin-top: 8px; color: var(--muted); font-size: .8em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+:root[data-theme="pixel"] #plan .tc { border-radius: 0; font-size: 19px; }
+
+/* Top left, under the brand and the message (in the middle of the left edge they covered wide headlines).
+   Out of the header's flow, so the header's height and the centered content don't move. */
+.head-left { position: relative; }
+#sessions {
+  position: absolute; left: 0; top: calc(100% + clamp(10px, 1.6vh, 16px));
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+}
+/* The message crab hangs from a letter down to ~0.82 × the message's font size below the strip; stay clear of it. */
+#note:not([hidden]) ~ #sessions { top: calc(100% + 10px + .85 * clamp(18px, 2.2vw, 30px)); }
+.sess {
+  width: 236px; padding: 12px 14px; border-radius: var(--radius); text-align: left;
+  background: var(--card); border: 1px solid var(--card-border); box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+#sessions .more { padding: 0 4px; color: var(--muted); font-size: .85em; }
+.sess .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.sess .p { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The session the middle of the screen is showing (its step and task list). */
+.sess.focus {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent), 0 0 26px -4px color-mix(in srgb, var(--accent) 45%, transparent), var(--card-shadow);
+}
+.sess.focus .p { color: var(--accent); text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent); }
+.sess .a { margin-top: 3px; color: var(--muted); font-size: .9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sess .tm { margin-top: 2px; color: var(--muted); font-size: .82em; font-variant-numeric: tabular-nums; }
+.chip { flex: none; font-size: 11px; font-weight: 600; letter-spacing: .04em; padding: 2px 8px; border-radius: 999px; color: var(--chip-ink, var(--bg)); background: var(--chip, var(--accent-base)); }
+.chip.waiting { --chip: var(--warn); }
+.chip.done { --chip: var(--ok); }
+.chip.idle { --chip: var(--card-border); --chip-ink: var(--fg); }
+
+#alert { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .5s ease; box-shadow: inset 0 0 140px 12px var(--warn); }
+body[data-state="waiting"] #alert { animation: alert 1.8s ease-in-out infinite; }
+@keyframes alert { 0%, 100% { opacity: .15; } 50% { opacity: .65; } }
+
+/* ---------- theme specifics ---------- */
+:root[data-theme="pixel"] h1, :root[data-theme="pixel"] .clock .time { text-transform: uppercase; text-shadow: 0 0 12px color-mix(in srgb, var(--accent-base) 45%, transparent); }
+:root[data-theme="pixel"] h1::after { content: "_"; color: var(--accent); animation: blink 1s steps(1) infinite; }
+:root[data-theme="pixel"] #spin { display: inline; }
+:root[data-theme="pixel"] .brand { font-family: "Press Start 2P", monospace; font-size: 12px; }
+:root[data-theme="pixel"] .chip { border-radius: 0; font-family: "Press Start 2P", monospace; font-size: 8px; padding: 4px 6px; }
+:root[data-theme="pixel"] #nowline { border-radius: 0; }
+:root[data-theme="pixel"] body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,.28) 0 1px, transparent 1px 3px),
+              radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%);
+}
+@keyframes blink { 50% { opacity: 0; } }
+:root[data-theme="pixel"] #tagline { font-size: clamp(20px, 2.2vw, 28px); }
+:root[data-theme="pixel"] #nowline { font-size: clamp(18px, 1.8vw, 22px); }
+:root[data-theme="pixel"] .clock .date { font-size: 16px; }
+
+/* ---------- picker ---------- */
+#picker {
+  position: fixed; left: 50%; bottom: 16px; z-index: 10; width: min(680px, calc(100vw - 32px));
+  transform: translate(-50%, calc(100% + 24px)); opacity: 0;
+  transition: transform .45s cubic-bezier(.22, 1, .36, 1), opacity .3s ease;
+  padding: 14px; border-radius: 16px; color: #f4f4f5;
+  background: rgba(18, 18, 20, .82); border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 20px 50px -12px rgba(0,0,0,.55);
+  backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  font: 13px/1.4 ui-sans-serif, -apple-system, "Inter", sans-serif; pointer-events: auto; user-select: auto;
+}
+#picker.show { transform: translate(-50%, 0); opacity: 1; }
+#picker .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+#picker .row + .row { margin-top: 10px; }
+#picker .lbl { color: rgba(244,244,245,.55); margin-right: 2px; }
+#picker button, #picker input[type="text"] {
+  font: inherit; color: inherit; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06);
+  border-radius: 10px; padding: 7px 11px;
+}
+#picker button { cursor: pointer; transition: background .15s ease, transform .1s ease; }
+#picker button:hover { background: rgba(255,255,255,.12); }
+#picker button:active { transform: scale(.97); }
+#picker button[aria-pressed="true"] { background: #f4f4f5; color: #111; border-color: #f4f4f5; }
+#picker .themes button { flex: 1; min-width: 120px; display: flex; align-items: center; gap: 8px; justify-content: center; }
+#picker .sw { width: 14px; height: 14px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+#picker input[type="text"] { flex: 1; min-width: 200px; outline: none; }
+#picker input[type="text"]:focus { border-color: rgba(255,255,255,.4); }
+#picker .tog { display: flex; align-items: center; gap: 6px; margin-left: auto; color: rgba(244,244,245,.75); cursor: pointer; }
+#picker .hint { margin-top: 10px; color: rgba(244,244,245,.45); font-size: 12px; }
+#picker .hint b { color: rgba(244,244,245,.75); font-weight: 500; }
+
+@media (max-width: 640px) {
+  #cal, #usage { display: none; }
+  #note { max-width: 100%; }
+  #sessions { width: calc(100vw - 2 * var(--side)); }
+  .sess { width: 100%; }
+  #sessions .sess:nth-child(n+3) { display: none; }
+  .brand .sub { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #alert, .dot, #cal .cdot { animation: none !important; }
+}
+</style>
+</head>
+<body data-state="idle">
+<canvas id="sky"></canvas>
+<canvas id="bg"></canvas>
+<div id="alert"></div>
+<div id="ui">
+  <header>
+    <div class="head-left">
+      <div class="brand" id="brand"></div>
+      <div id="note" hidden><div id="msg"></div></div>
+      <div id="sessions"></div>
+    </div>
+    <div class="head-right">
+      <div class="clock"><div class="time" id="time">--:--</div><div class="date" id="date"></div></div>
+      <div id="cards"><div id="cal" aria-live="polite"></div><div id="usage"></div></div>
+    </div>
+  </header>
+  <main>
+    <div id="heroSlot"></div>
+    <h1 id="headline">claude is <em>working</em></h1>
+    <div class="below">
+      <div id="tagline"></div>
+      <div id="nowline"></div>
+      <div id="plan"></div>
+    </div>
+  </main>
+</div>
+<canvas id="fx"></canvas>
+
+<div id="picker" aria-label="Lock screen settings">
+  <div class="row themes" id="themeBtns"></div>
+  <div class="row">
+    <input type="text" id="customInput" dir="auto" maxlength="140" placeholder="Custom message, e.g. Back in 10, grabbing coffee">
+    <button id="saveText">Set</button>
+    <button id="clearText">Clear</button>
+  </div>
+  <div class="row" id="demoBtns">
+    <span class="lbl">Preview</span>
+  </div>
+  <div class="hint"><b id="themeKeys">1–3</b> theme · <b>D</b> cycle preview states · <b>H</b> hide details · <b>F</b> fullscreen · <span id="conn"></span></div>
+</div>
+
+<script>
+"use strict";
+const TAU = Math.PI * 2;
+const $ = (s) => document.querySelector(s);
+const qs = new URLSearchParams(location.search);
+const SCREENSAVER = qs.has("screensaver");
+// The app's always-on display mode: the scene full screen on a display, all the time. No controls there either.
+const KIOSK = SCREENSAVER || qs.has("display");
+// Called by the screensaver: true while macOS shows its lock screen (with its own clock) on top of us.
+// Our clock fades out and the calendar card glides up into its place, then both reverse. It's all
+// transforms, so nothing else on the page moves. Progress is computed from elapsed time, and is
+// stepped by the frame loop plus a backup timer: web views can starve requestAnimationFrame while
+// another window covers them, and the animation must still end on time. A change mid-way reverses
+// from wherever it is.
+const LOCK_UI_MS = 1100;
+const lockUI = { from: 0, to: 0, start: 0, ms: 0, dist: 0, shown: -1 };
+function lockUIProgress(now = performance.now()) {
+  if (!lockUI.ms) return lockUI.to;
+  return lockUI.from + (lockUI.to - lockUI.from) * Math.min(1, (now - lockUI.start) / lockUI.ms);
+}
+window.setSystemLockUI = (on) => {
+  const now = performance.now(), p = lockUIProgress(now), to = on ? 1 : 0;
+  if (to === lockUI.to) return;
+  if (to && p === 0) lockUI.dist = calOffset();
+  Object.assign(lockUI, { from: p, to, start: now, ms: REDUCED ? 0 : LOCK_UI_MS * Math.abs(to - p) });
+  stepLockUI();
+};
+function calOffset() {
+  const clock = $(".clock").getBoundingClientRect(), cards = $("#cards").getBoundingClientRect();
+  return cards.height ? cards.top - clock.top : 0;
+}
+const easeInOutCubic = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+function stepLockUI() {
+  const p = lockUIProgress();
+  if (p === lockUI.shown) return;
+  lockUI.shown = p;
+  fitNoteToLockUI(p);
+  const clock = $(".clock"), cal = $("#cards"); // the calendar and usage cards move together
+  if (!p) { clock.style.opacity = clock.style.transform = clock.style.visibility = cal.style.transform = ""; return; }
+  const fade = easeInOutCubic(clamp(p / 0.6, 0, 1)); // the clock is gone before the card arrives, and reappears after it leaves
+  clock.style.opacity = String(1 - fade);
+  clock.style.transform = `translateY(${(-10 * fade).toFixed(2)}px)`;
+  clock.style.visibility = p === 1 ? "hidden" : "";
+  cal.style.transform = `translateY(${(-lockUI.dist * easeInOutCubic(clamp((p - 0.2) / 0.8, 0, 1))).toFixed(2)}px)`;
+}
+setInterval(stepLockUI, 16); // backup for when requestAnimationFrame is starved; a no-op when nothing changed
+// macOS's lock UI also puts a big clock at the top center, over the message strip. Meanwhile the strip
+// shrinks toward its top-left corner until it ends LOCK_CLOCK_HALF left of the screen's center, then
+// grows back. Its crab is drawn with the same scale (noteFit), so it stays on the letters.
+const LOCK_CLOCK_HALF = 300; // half the width kept clear for macOS's lock-screen clock, in CSS px
+const LOCK_CLOCK_BOTTOM = 320; // how far down that clock reaches
+const noteFit = { s: 1, ox: 0, oy: 0 };
+function fitNoteToLockUI(p) {
+  const el = $("#note");
+  if (!p || el.hidden) {
+    if (noteFit.s !== 1) { el.style.transform = el.style.transformOrigin = ""; noteFit.s = 1; }
+    return;
+  }
+  const r = el.getBoundingClientRect(), w = r.width / noteFit.s; // its size without our scale
+  const room = innerWidth / 2 - LOCK_CLOCK_HALF - r.left;
+  const fit = r.top >= LOCK_CLOCK_BOTTOM ? 1 : clamp(room / w, 0.45, 1);
+  Object.assign(noteFit, { s: 1 - (1 - fit) * easeInOutCubic(clamp(p, 0, 1)), ox: r.left, oy: r.top });
+  el.style.transformOrigin = "0 0";
+  el.style.transform = noteFit.s === 1 ? "" : `scale(${noteFit.s.toFixed(4)})`;
+}
+const THUMB = qs.has("thumb"); // tiny live preview inside the settings window: cheaper rendering, no controls
+const ALL_THEMES = ["warm", "pixel", "cosmic", "aquarium"];
+let THEMES = ["warm", "pixel", "cosmic", "aquarium"];
+const THEME_NAMES = { warm: "Warm", pixel: "Retro pixel", cosmic: "Cosmic", aquarium: "Aquarium" };
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+
+/* ---------- copy ---------- */
+const VERBS = ["Bubbling", "Pondering", "Percolating", "Noodling", "Scuttling", "Crafting", "Synthesizing", "Moseying", "Clawing through it", "Cogitating", "Tinkering", "Reticulating splines", "Brewing", "Untangling", "Shipping"];
+const IDLE_WORDS = ["chilling", "napping", "on a crab break", "dreaming in tokens", "sharpening its claws", "touching sand", "standing by"];
+const STATE_LABEL = { working: "Working", thinking: "Thinking", waiting: "Needs you", done: "Done", idle: "Idle" };
+
+/* ---------- state ---------- */
+let config = {
+  theme: qs.get("theme") || store.get("cl.theme") || "warm",
+  customText: qs.get("text") ?? store.get("cl.text") ?? "",
+  showDetails: store.get("cl.details") !== "0",
+  calTitles: true,
+  showUsage: false, // off until you turn it on
+};
+if (!ALL_THEMES.includes(config.theme)) config.theme = "warm";
+const themeFromUrl = qs.has("theme");
+let sessions = [];
+let calendar = { events: [], feeds: [] };
+let usage = null; // Claude plan usage: { connected, five_hour, seven_day, updated_at }, windows are { used, resets_at }
+let online = false;
+let lastLocalChange = 0;
+let demo = null, demoList = null;
+let current = { state: "idle", focus: null, live: [] };
+let prevState = null;
+let verbIdx = Math.floor(Math.random() * VERBS.length), idleIdx = 0;
+
+/* ---------- helpers ---------- */
+const rand = (a = 1, b) => (b === undefined ? Math.random() * a : a + Math.random() * (b - a));
+const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; }
+function wrap(o, m, w, h) { if (o.x < -m) o.x = w + m; else if (o.x > w + m) o.x = -m; if (o.y < -m) o.y = h + m; else if (o.y > h + m) o.y = -m; }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function fmtDur(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+  if (h) return `${h}h ${String(m).padStart(2, "0")}m`;
+  if (m) return `${m}m ${String(r).padStart(2, "0")}s`;
+  return `${r}s`;
+}
+function ago(ms) { const m = Math.floor(ms / 60000); return m < 1 ? "just now" : m < 60 ? `${m}m ago` : `${Math.floor(m / 60)}h ago`; }
+
+/* ---------- Claude starburst + crab sprites ---------- */
+const RAYS = [1, .74, .93, .68, .88, .8, .98, .71, .9, .77, .95, .73].map((l, i) => ({ a: (i / 12) * TAU + (((i * 7) % 3) - 1) * 0.06, l }));
+
+function burst(g, x, y, r, rot, color, alpha = 1, breathe = 0, t = 0) {
+  g.save(); g.translate(x, y); g.rotate(rot); g.globalAlpha *= alpha;
+  g.strokeStyle = color; g.lineCap = "round"; g.lineWidth = Math.max(1, r * 0.16);
+  g.beginPath();
+  for (let i = 0; i < RAYS.length; i++) {
+    const R = RAYS[i], len = r * R.l * (1 + breathe * Math.sin(t * 3 + i * 1.3));
+    const c = Math.cos(R.a), s = Math.sin(R.a);
+    g.moveTo(c * r * 0.1, s * r * 0.1); g.lineTo(c * len, s * len);
+  }
+  g.stroke(); g.restore();
+}
+function pixelBurst(g, x, y, r, rot, color, breathe = 0, t = 0) {
+  g.fillStyle = color;
+  const w = Math.max(1, Math.round(r * 0.15));
+  for (let i = 0; i < RAYS.length; i++) {
+    const R = RAYS[i], a = R.a + rot, len = r * R.l * (1 + breathe * Math.sin(t * 3 + i * 1.3));
+    const c = Math.cos(a), s = Math.sin(a);
+    for (let d = r * 0.08; d <= len; d += 0.7) g.fillRect(Math.round(x + c * d - w / 2), Math.round(y + s * d - w / 2), w, w);
+  }
+}
+function burstSVG(color) {
+  const lines = RAYS.map((R) => `<line x1="${12 + Math.cos(R.a) * 1.2}" y1="${12 + Math.sin(R.a) * 1.2}" x2="${12 + Math.cos(R.a) * 11 * R.l}" y2="${12 + Math.sin(R.a) * 11 * R.l}"/>`).join("");
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.1" stroke-linecap="round" aria-hidden="true">${lines}</svg>`;
+}
+function star(g, x, y, r, color) {
+  g.fillStyle = color; g.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r;
+    g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  g.closePath(); g.fill();
+}
+
+// 16-wide pixel crab, Clawd-style. X = shell, E = eye.
+const CRAB = {
+  normal: ["...XXXXXXXXXX...", "...XXXXXXXXXX...", "...XXEXXXXEXX...", "XXXXXEXXXXEXXXXX", "XX.XXXXXXXXXX.XX", "...XXXXXXXXXX...", "...XXXXXXXXXX..."],
+  wave:   ["XX.XXXXXXXXXX.XX", "XX.XXXXXXXXXX.XX", "...XXEXXXXEXX...", "...XXEXXXXEXX...", "...XXXXXXXXXX...", "...XXXXXXXXXX...", "...XXXXXXXXXX..."],
+  sleep:  ["...XXXXXXXXXX...", "...XXXXXXXXXX...", "...XXXXXXXXXX...", "XXXXEEXXXXEEXXXX", "XX.XXXXXXXXXX.XX", "...XXXXXXXXXX...", "...XXXXXXXXXX..."],
+};
+// Sneaking under macOS's password field: crouched flat, claws up at the sides, eyes popped up on
+// top looking at the field. o shifts the eyes for sneakL/sneakR (glancing where it's heading);
+// tiptoe legs are single points.
+function sneakRows(o) {
+  const top = [..."................"], eyes = [..."X..XXXXXXXXXX..X"];
+  for (const e of [5 + o, 10 + o]) { top[e - 1] = top[e] = top[e + 1] = "X"; eyes[e] = "E"; }
+  return [top.join(""), eyes.join(""), "XXXXXXXXXXXXXXXX", "...XXXXXXXXXX..."];
+}
+Object.assign(CRAB, { sneak: sneakRows(0), sneakL: sneakRows(-1), sneakR: sneakRows(1) });
+const LEGS = [["...X.X....X.X...", "...X.X....X.X..."], ["....X.X..X.X....", "....X.X..X.X...."]];
+const SNEAK_LEGS = [["..X..X....X..X.."], [".X..X......X..X."]];
+const crabRows = (pose) => (pose.startsWith("sneak") ? 5 : 9);
+function drawCrab(g, cx, by, ps, pose, leg, body, eye, blink) {
+  const rows = CRAB[pose].concat((pose.startsWith("sneak") ? SNEAK_LEGS : LEGS)[leg]);
+  const x0 = Math.round(cx - 8 * ps), y0 = Math.round(by - rows.length * ps);
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    for (let c = 0; c < 16; c++) {
+      let ch = row[c];
+      if (ch === ".") continue;
+      if (ch === "E" && blink && r === 2) ch = "X";
+      g.fillStyle = ch === "E" ? eye : body;
+      g.fillRect(x0 + c * ps, y0 + r * ps, ps, ps);
+    }
+  }
+}
+
+/* ---------- shared crab behaviour ---------- */
+const walker = { x: -1, dir: 1, t: 0, duck: 0, step: 0 };
+// sneaking: crouched under macOS's password field (see drawGroundCrab).
+function stepWalker(dt, state, ps, w, targetX, sneaking = false) {
+  const k = walker; k.t += dt;
+  const half = 8 * ps;
+  if (k.x < 0) k.x = w * 0.3;
+  k.x = clamp(k.x, half, w - half);
+  let pose = "normal", lift = 0, moving = false, leg = null, look = 0;
+  if (state === "working") {
+    if (sneaking) {
+      // Tiptoe: a small careful step, then a pause to peek up at the field before the next one.
+      k.step += dt * 2;
+      const ph = k.step % 1, go = ph < 0.55 ? Math.sin((ph / 0.55) * Math.PI) : 0;
+      k.x += k.dir * ps * 24 * go * dt;
+      leg = Math.floor(k.step) % 2; look = go > 0.15 ? k.dir : 0;
+    } else {
+      k.x += k.dir * ps * 9 * dt; moving = true;
+    }
+    if (k.x > w - half - ps * 4) k.dir = -1;
+    if (k.x < half + ps * 4) k.dir = 1;
+  } else if (state === "waiting") {
+    const d = targetX - k.x;
+    if (Math.abs(d) > ps * 2) { k.x += Math.sign(d) * Math.min(Math.abs(d), ps * (sneaking ? 12 : 32) * dt); moving = true; look = Math.sign(d); }
+    pose = Math.floor(k.t * 4) % 2 ? "wave" : "normal";
+    lift = Math.abs(Math.sin(k.t * 7)) * ps * 3;
+  } else if (state === "done") {
+    pose = Math.floor(k.t * 3) % 2 ? "wave" : "normal";
+    lift = Math.abs(Math.sin(k.t * 6)) * ps * 2.5;
+    k.x += Math.sin(k.t * 3) * ps * 6 * dt;
+  } else {
+    pose = "sleep";
+  }
+  if (sneaking && state !== "idle") { pose = look < 0 ? "sneakL" : look > 0 ? "sneakR" : "sneak"; lift = 0; }
+  if (leg === null) leg = moving ? Math.floor(k.t * 8) % 2 : 0;
+  const blink = pose === "normal" && k.t % 4 < 0.12;
+  return { x: k.x, pose, leg, lift, blink };
+}
+const Z = { t: 0, list: [] };
+function zzz(g, dt, x, y, ps, color, font) {
+  Z.t += dt;
+  if (Z.t > 1.1) { Z.t = 0; Z.list.push({ x, y, age: 0 }); }
+  Z.list = Z.list.filter((z) => (z.age += dt) < 3);
+  g.fillStyle = color; g.textAlign = "center";
+  for (const z of Z.list) {
+    g.globalAlpha = Math.max(0, 1 - z.age / 3) * 0.8;
+    g.font = `${Math.max(4, Math.round(ps * (2.5 + z.age * 1.4)))}px ${font}`;
+    g.fillText("z", z.x + Math.sin(z.age * 2) * ps * 2 + z.age * ps * 3, z.y - z.age * ps * 7);
+  }
+  g.globalAlpha = 1;
+}
+function bubble(g, x, y, ps, fill, ink, ch, font, round = true) {
+  const s = ps * 5;
+  if (!round) {
+    // 8-bit: the theme draws on a quarter-size canvas, so whole pixels only, and the "!" is drawn as pixels
+    // (a 7 px font "!" blurred into a smudge).
+    // Twice the rounded bubble's size, growing up and to the right from the same corner so it stays clear of the crab.
+    const c = Math.max(1, Math.round(ps)), S = 10 * c, X = Math.round(x - s / 2), Y = Math.round(y + s / 2 - S);
+    g.fillStyle = fill;
+    g.fillRect(X, Y, S, S); g.fillRect(X + c, Y + S, c * 2, c); g.fillRect(X, Y + S + c, c, c); // box and tail
+    g.fillStyle = ink;
+    const bx = X + Math.round(S / 2) - c;
+    if (ch === "!") { g.fillRect(bx, Y + c, 2 * c, 5 * c); g.fillRect(bx, Y + 7 * c, 2 * c, 2 * c); return; } // a long bar, a gap, a short dot
+    g.font = `${Math.max(5, Math.round(ps * 3.4))}px ${font}`; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(ch, X + S / 2, Y + S / 2); g.textBaseline = "alphabetic";
+    return;
+  }
+  g.fillStyle = fill; g.beginPath();
+  if (g.roundRect) g.roundRect(x - s / 2, y - s / 2, s, s, ps * 1.2); else g.rect(x - s / 2, y - s / 2, s, s);
+  g.fill();
+  g.beginPath(); g.moveTo(x - ps, y + s / 2 - 0.5); g.lineTo(x - ps * 2.5, y + s / 2 + ps * 2); g.lineTo(x + ps, y + s / 2 - 0.5); g.fill();
+  g.fillStyle = ink; g.font = `700 ${Math.max(5, Math.round(ps * 3.4))}px ${font}`;
+  g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, x, y + ps * 0.3); g.textBaseline = "alphabetic";
+}
+// macOS draws the password field and "Touch ID or Enter Password" over the bottom center of the
+// lock screen once you move the mouse: while that's showing (lockUI.to, set by the screensaver),
+// the crab sneaks under them (crouched, tiptoeing, peeking up) and waits for you beside them. The
+// rest of the time it keeps its usual moves, like running to the center and jumping with "!".
+const LOGIN_HALF = 94; // half their width, in CSS px (112 started the crawl early and ended it late, per Dan on the real lock screen)
+function drawGroundCrab(g, dt, S, p, ps, w, ground, font, round = true, k = 1) {
+  const mid = w / 2, edge = LOGIN_HALF / k + 8 * ps, loginUp = lockUI.to === 1 && S.state !== "idle";
+  const target = S.state === "waiting" && loginUp ? S.crabTarget + edge + ps * 4 : S.crabTarget;
+  // Crouch just before the leading claw reaches the field; stand as the trailing claw clears it.
+  const off = walker.x < 0 ? Infinity : walker.x - mid;
+  const ahead = S.state === "working" ? -off * walker.dir : -Math.abs(off); // > 0 while still approaching
+  const under = loginUp && (ahead > 0 ? ahead < edge + ps * 0.5 : -ahead < edge) ? 1 : 0;
+  walker.duck += (under - walker.duck) * Math.min(1, dt * 14);
+  const c = stepWalker(dt, S.state, ps, w, target, walker.duck > 0.85);
+  const dip = c.pose.startsWith("sneak") ? 0 : walker.duck; // the quick crouch into and out of the sneak
+  const sy = 1 - 0.45 * dip, sx = 1 + 0.1 * dip, lift = c.lift * (1 - walker.duck);
+  const by = ground - lift, top = by - ps * crabRows(c.pose) * sy;
+  g.fillStyle = p.shadow; g.beginPath();
+  g.ellipse(c.x, ground + ps * 0.4, ps * 7 * sx * (1 - lift / (ps * 9)), Math.max(1, ps * 1.1), 0, 0, TAU); g.fill();
+  g.save(); g.translate(c.x, by); g.scale(sx, sy);
+  drawCrab(g, 0, 0, ps, c.pose, c.leg, p.crab, p.eye, c.blink);
+  g.restore();
+  if (S.state === "waiting") bubble(g, c.x + ps * 9, top - ps * 4, ps, p.warn, p.eye, "!", font, round);
+  if (S.state === "idle") zzz(g, dt, c.x + ps * 6, top, ps, p.fg, font);
+}
+
+/* ---------- confetti ---------- */
+let confetti = [];
+function popConfetti(x, y, colors) {
+  for (let i = 0; i < 150; i++) {
+    const a = rand(TAU), v = rand(140, 560);
+    confetti.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 220, r: rand(TAU), vr: rand(-8, 8), c: colors[i % colors.length], life: rand(2.2, 3.8), w: rand(5, 10), h: rand(2.5, 5) });
+  }
+}
+function drawConfetti(g, dt, k = 1) {
+  confetti = confetti.filter((p) => (p.life -= dt) > 0);
+  for (const p of confetti) {
+    p.vy += 560 * dt; p.vx *= 0.99; p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt;
+    g.save(); g.globalAlpha = Math.min(1, p.life); g.translate(p.x / k, p.y / k); g.rotate(p.r);
+    g.fillStyle = p.c; g.fillRect(-p.w / 2 / k, -p.h / 2 / k, Math.max(1, p.w / k), Math.max(1, p.h / k)); g.restore();
+  }
+}
+
+/* ---------- hero motion ---------- */
+const hero = { rot: 0, spd: 0.1 };
+function heroParams(t, dt, state) {
+  const target = { working: 0.9, waiting: 0.25, done: 0.35, idle: 0.1 }[state];
+  hero.spd += (target - hero.spd) * Math.min(1, dt * 1.2);
+  hero.rot += hero.spd * dt;
+  const scale = state === "waiting" ? 1 + 0.07 * Math.sin(t * 7) : state === "working" ? 1 + 0.025 * Math.sin(t * 2) : 1;
+  const breathe = state === "working" ? 0.09 : state === "idle" ? 0.02 : 0.04;
+  return { rot: hero.rot, scale, breathe };
+}
+
+/* ---------- canvas + layout ---------- */
+const cv = $("#bg"), ctx = cv.getContext("2d");
+let W = 0, H = 0;
+const L = { hx: 0, hy: 0, hr: 60, ground: 0 };
+// Puts the middle of <main> (where the headline is) on the screen's center line. Layout only: the mouse never moves it.
+function centerHeadline() {
+  const m = $("main"), dy = innerHeight / 2 - (m.offsetTop + m.offsetHeight / 2);
+  m.style.transform = Math.abs(dy) < 0.5 ? "" : `translateY(${dy.toFixed(1)}px)`;
+}
+function measure() {
+  centerHeadline();
+  const h = $("#heroSlot").getBoundingClientRect();
+  L.hx = h.left + h.width / 2; L.hy = h.top + h.height / 2; L.hr = h.width / 2;
+  L.ground = H - 14; // the crab walks in its own lane below everything (see #ui padding-bottom)
+  measureNote();
+  fitSessions();
+}
+// Session cards hang down from the top left; drop the ones that would run into the headline or task list.
+function fitSessions() {
+  const box = $("#sessions");
+  box.querySelector(".more")?.remove();
+  const cards = [...box.querySelectorAll(".sess")];
+  cards.forEach((c) => (c.style.display = ""));
+  const keepOut = ["#headline", "#tagline", "#nowline", "#plan"].map((s) => $(s).getBoundingClientRect()).filter((r) => r.width && r.height);
+  const hits = (el) => { const a = el.getBoundingClientRect(); return keepOut.some((b) => a.left < b.right + 16 && a.right > b.left - 16 && a.top < b.bottom + 12 && a.bottom > b.top - 12); };
+  let shown = cards.findIndex(hits);
+  if (shown < 0) return;
+  const more = document.createElement("div");
+  more.className = "more";
+  box.append(more);
+  for (; shown >= 0; shown--) {
+    cards.forEach((c, i) => (c.style.display = i < shown ? "" : "none"));
+    more.textContent = `+${cards.length - shown} more`;
+    if (!hits(more)) return;
+  }
+}
+function resize() {
+  const dpr = THUMB ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+  W = innerWidth; H = innerHeight;
+  cv.width = fx.width = Math.round(W * dpr); cv.height = fx.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); fxg.setTransform(dpr, 0, 0, dpr, 0, 0);
+  measure();
+  THEME_IMPL[config.theme].init();
+}
+
+const PAL = {
+  warm:   { accent: "#d97757", warn: "#f2b350", ok: "#a8c9a0", crab: "#d97757", eye: "#1f1e1d", fg: "#f0eee6", shadow: "rgba(0,0,0,.35)" },
+  pixel:  { accent: "#ff7a4d", warn: "#ffd23f", ok: "#63f5a0", crab: "#ff7a4d", eye: "#0d0c0b", fg: "#f3e9dc", shadow: "#241811" },
+  cosmic: { accent: "#ff9a76", warn: "#ffcf5c", ok: "#7ee0c3", crab: "#ff9a76", eye: "#1a1030", fg: "#f4f1ff", shadow: "rgba(0,0,0,0)" },
+  aquarium: { accent: "#5fd3ff", warn: "#ffd166", ok: "#8ef0a8", crab: "#ff8a5c", eye: "#06243f", fg: "#eaf7ff", shadow: "rgba(0,10,20,.3)" },
+};
+const stateColor = (p, s) => (s === "waiting" ? p.warn : s === "done" ? p.ok : p.accent);
+
+const THEME_IMPL = {
+  warm: {
+    init() {
+      this.b = Array.from({ length: 11 }, () => ({ x: rand(W), y: rand(H), r: rand(30, 200), rot: rand(TAU), vr: rand(-0.06, 0.06), vx: rand(-8, 8), vy: rand(-5, 5), a: rand(0.03, 0.08) }));
+      this.d = Array.from({ length: 80 }, () => ({ x: rand(W), y: rand(H), r: rand(0.4, 1.5), v: rand(4, 14), a: rand(0.08, 0.35), p: rand(TAU) }));
+    },
+    draw(g, t, dt, S) {
+      const p = PAL.warm;
+      const bg = g.createRadialGradient(W / 2, H * 0.42, 0, W / 2, H * 0.42, Math.hypot(W, H) * 0.6);
+      bg.addColorStop(0, "#2c2926"); bg.addColorStop(1, "#171615");
+      g.fillStyle = bg; g.fillRect(0, 0, W, H);
+      for (const b of this.b) { b.x += b.vx * dt; b.y += b.vy * dt; b.rot += b.vr * dt; wrap(b, b.r, W, H); burst(g, b.x, b.y, b.r, b.rot, p.accent, b.a); }
+      g.fillStyle = p.fg;
+      for (const d of this.d) {
+        d.y -= d.v * dt; if (d.y < -4) { d.y = H + 4; d.x = rand(W); }
+        g.globalAlpha = d.a * (0.6 + 0.4 * Math.sin(t + d.p)); g.beginPath(); g.arc(d.x, d.y, d.r, 0, TAU); g.fill();
+      }
+      g.globalAlpha = 1;
+      const gl = g.createLinearGradient(0, 0, W, 0);
+      gl.addColorStop(0, "rgba(240,238,230,0)"); gl.addColorStop(0.5, "rgba(240,238,230,.16)"); gl.addColorStop(1, "rgba(240,238,230,0)");
+      g.fillStyle = gl; g.fillRect(0, L.ground, W, 1);
+      const col = stateColor(p, S.state), hp = S.hero, R = L.hr * 2.6;
+      const glow = g.createRadialGradient(L.hx, L.hy, 0, L.hx, L.hy, R);
+      glow.addColorStop(0, hexA(col, 0.26)); glow.addColorStop(1, hexA(col, 0));
+      g.fillStyle = glow; g.fillRect(L.hx - R, L.hy - R, R * 2, R * 2);
+      burst(g, L.hx, L.hy, L.hr * hp.scale, hp.rot, col, 1, hp.breathe, t);
+      drawGroundCrab(g, dt, S, p, Math.round(clamp(W / 190, 4, 9)), W, L.ground, 'system-ui, -apple-system, sans-serif');
+      drawConfetti(g, dt);
+    },
+  },
+
+  pixel: {
+    PX: 4,
+    init() {
+      const P = this.PX;
+      this.lw = Math.ceil(W / P); this.lh = Math.ceil(H / P);
+      this.lo = this.lo || document.createElement("canvas");
+      this.lo.width = this.lw; this.lo.height = this.lh;
+      this.lg = this.lo.getContext("2d");
+      this.stars = Array.from({ length: Math.round((this.lw * this.lh) / 420) }, () => ({ x: rand(this.lw) | 0, y: rand(this.lh) | 0, p: rand(TAU), s: rand(0.5, 2.5) }));
+      this.b = Array.from({ length: 8 }, () => ({ x: rand(this.lw), y: rand(this.lh), r: rand(3, 10), rot: rand(TAU), vr: rand(-0.3, 0.3), vx: rand(-3, 3), vy: rand(-2, 2) }));
+    },
+    draw(g, t, dt, S) {
+      const P = this.PX, lg = this.lg, lw = this.lw, lh = this.lh, p = PAL.pixel;
+      lg.fillStyle = "#0d0c0b"; lg.fillRect(0, 0, lw, lh);
+      for (const s of this.stars) {
+        const a = 0.5 + 0.5 * Math.sin(t * s.s + s.p);
+        if (a < 0.3) continue;
+        lg.fillStyle = a > 0.88 ? "#f3e9dc" : "#4a423a"; lg.fillRect(s.x, s.y, 1, 1);
+      }
+      for (const b of this.b) { b.x += b.vx * dt; b.y += b.vy * dt; b.rot += b.vr * dt; wrap(b, b.r, lw, lh); pixelBurst(lg, b.x, b.y, b.r, b.rot, "#3a2219"); }
+      const gy = Math.round(L.ground / P);
+      lg.fillStyle = "#3d2a20";
+      const scroll = Math.floor(t * 8) % 4;
+      for (let x = -scroll; x < lw; x += 4) lg.fillRect(x, gy + 1, 2, 1);
+      const col = stateColor(p, S.state), hp = S.hero;
+      const hx = Math.round(L.hx / P), hy = Math.round(L.hy / P), hr = L.hr / P;
+      if (S.state === "working" || S.state === "waiting") {
+        const n = 16;
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * TAU + t * 1.6, on = (i + Math.floor(t * 10)) % n < 5;
+          lg.fillStyle = on ? col : "#2a1d16";
+          lg.fillRect(Math.round(hx + Math.cos(a) * hr * 1.35) - 1, Math.round(hy + Math.sin(a) * hr * 1.35) - 1, 2, 2);
+        }
+      }
+      pixelBurst(lg, hx, hy, hr * hp.scale, hp.rot, col, hp.breathe, t);
+      drawGroundCrab(lg, dt, { ...S, crabTarget: L.hx / P }, p, 2, lw, gy, '"Press Start 2P", monospace', false, P);
+      drawConfetti(lg, dt, P);
+      g.imageSmoothingEnabled = false;
+      g.drawImage(this.lo, 0, 0, lw * P, lh * P);
+    },
+  },
+
+  cosmic: {
+    init() {
+      this.stars = Array.from({ length: 260 }, () => ({ x: rand(W), y: rand(H), z: rand(0.2, 1), p: rand(TAU) }));
+      this.b = Array.from({ length: 24 }, () => ({ x: rand(W), y: rand(H), z: rand(0.25, 1), rot: rand(TAU), vr: rand(-0.25, 0.25), c: pick(["#ff9a76", "#ffb38a", "#d97757", "#c4a7ff", "#ffd0a8"]) }));
+      this.neb = [{ c: "#6b2fa6", x: 0.2, y: 0.3 }, { c: "#d9577a", x: 0.8, y: 0.72 }, { c: "#1d6f8c", x: 0.62, y: 0.12 }];
+      this.crabs = [4, 3, 5].map((ps) => ({ x: rand(W), y: rand(H * 0.12, H * 0.88), vx: rand(-14, 14), vy: rand(-8, 8), rot: rand(TAU), ps, ph: rand(TAU) }));
+      this.v = 6; this.shoot = null; this.next = 3;
+      // Perf: the sky + nebulae are soft and drift slowly, so they live on their own quarter-res
+      // layer (#sky) refreshed 4x/s. Each starburst colour is pre-rendered once as an <img> sprite:
+      // drawing from an image is ~6x cheaper than drawing from a canvas.
+      this.sky = $("#sky");
+      this.sky.width = Math.ceil(W / 4); this.sky.height = Math.ceil(H / 4);
+      this.skyAt = -1;
+      this.sprites = {};
+      for (const b of this.b) {
+        if (this.sprites[b.c]) continue;
+        const canvas = this.glowSprite(b.c), img = new Image();
+        this.sprites[b.c] = canvas; // used until the image has decoded
+        img.onload = () => { this.sprites[b.c] = img; };
+        img.src = canvas.toDataURL();
+      }
+    },
+    glowSprite(color) {
+      const size = 192, r = size / 2, c = document.createElement("canvas");
+      c.width = c.height = size;
+      const g = c.getContext("2d"), gr = g.createRadialGradient(r, r, 0, r, r, r);
+      gr.addColorStop(0, hexA(color, 0.3)); gr.addColorStop(1, hexA(color, 0));
+      g.fillStyle = gr; g.fillRect(0, 0, size, size);
+      burst(g, r, r, r / 2.2, 0, color, 1);
+      return c;
+    },
+    paintSky(t) {
+      const g = this.sky.getContext("2d"), w = this.sky.width, h = this.sky.height;
+      const bg = g.createLinearGradient(0, 0, w * 0.3, h);
+      bg.addColorStop(0, "#070617"); bg.addColorStop(0.55, "#140c30"); bg.addColorStop(1, "#2a0e36");
+      g.globalCompositeOperation = "source-over";
+      g.fillStyle = bg; g.fillRect(0, 0, w, h);
+      g.globalCompositeOperation = "lighter";
+      this.neb.forEach((n, i) => {
+        const x = w * (n.x + 0.06 * Math.sin(t * 0.05 + i * 2)), y = h * (n.y + 0.05 * Math.cos(t * 0.04 + i)), R = Math.max(w, h) * 0.45;
+        const gr = g.createRadialGradient(x, y, 0, x, y, R);
+        gr.addColorStop(0, hexA(n.c, 0.2)); gr.addColorStop(1, hexA(n.c, 0));
+        g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      });
+      g.globalCompositeOperation = "source-over";
+    },
+    draw(g, t, dt, S) {
+      const p = PAL.cosmic;
+      if (this.skyAt < 0 || t - this.skyAt > 0.25) { this.paintSky(t); this.skyAt = t; }
+      g.clearRect(0, 0, W, H); // transparent: the #sky layer shows through
+      g.imageSmoothingEnabled = true; // the pixel theme turns this off on the shared context
+      g.globalCompositeOperation = "lighter";
+      const drift = S.state === "working" ? 20 : S.state === "waiting" ? 3 : 7;
+      this.v += (drift - this.v) * Math.min(1, dt);
+      g.fillStyle = "#fff";
+      for (const s of this.stars) {
+        s.x -= this.v * s.z * dt; if (s.x < 0) { s.x = W; s.y = rand(H); }
+        g.globalAlpha = s.z * (0.55 + 0.45 * Math.sin(t * 2 * s.z + s.p)); g.fillRect(s.x, s.y, s.z * 1.6, s.z * 1.6);
+      }
+      g.globalAlpha = 1;
+      for (const b of this.b) {
+        b.x -= this.v * b.z * 2 * dt; b.y += Math.sin(t * 0.3 + b.rot) * b.z * 4 * dt; b.rot += b.vr * dt;
+        if (b.x < -80) { b.x = W + 80; b.y = rand(H); }
+        const R = (6 + b.z * 30) * 2.2;
+        g.save(); g.translate(b.x, b.y); g.rotate(b.rot); g.globalAlpha = 0.3 + 0.5 * b.z;
+        g.drawImage(this.sprites[b.c], -R, -R, R * 2, R * 2);
+        g.restore();
+      }
+      this.next -= dt;
+      if (this.next < 0 && !this.shoot) { this.shoot = { x: rand(W * 0.3, W), y: rand(H * 0.4), life: 0 }; this.next = rand(4, 9); }
+      if (this.shoot) {
+        const s = this.shoot; s.life += dt;
+        const x = s.x - s.life * 900, y = s.y + s.life * 380, a = Math.max(0, 1 - s.life / 0.9);
+        const gr = g.createLinearGradient(x, y, x + 160, y - 68);
+        gr.addColorStop(0, `rgba(255,255,255,${a})`); gr.addColorStop(1, "rgba(255,255,255,0)");
+        g.strokeStyle = gr; g.lineWidth = 2; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 160, y - 68); g.stroke();
+        if (s.life > 0.9) this.shoot = null;
+      }
+      const col = stateColor(p, S.state), hp = S.hero, R = L.hr * 3.2;
+      const glow = g.createRadialGradient(L.hx, L.hy, 0, L.hx, L.hy, R);
+      glow.addColorStop(0, hexA(col, 0.45)); glow.addColorStop(0.4, hexA(col, 0.12)); glow.addColorStop(1, hexA(col, 0));
+      g.fillStyle = glow; g.fillRect(L.hx - R, L.hy - R, R * 2, R * 2);
+      burst(g, L.hx, L.hy, L.hr * hp.scale, hp.rot, col, 1, hp.breathe, t);
+      if (S.state === "working") {
+        for (let i = 0; i < 3; i++) {
+          const a = t * (0.9 + i * 0.35) + i * 2.1, rr = L.hr * (1.45 + i * 0.22);
+          g.fillStyle = hexA(["#ffd0a8", "#c4a7ff", "#7ee0c3"][i], 0.9);
+          g.beginPath(); g.arc(L.hx + Math.cos(a) * rr, L.hy + Math.sin(a) * rr * 0.42, 3 + i, 0, TAU); g.fill();
+        }
+      }
+      g.globalCompositeOperation = "source-over";
+      this.crabs.forEach((c, i) => {
+        const sp = S.state === "waiting" ? 0.25 : 1;
+        c.x += c.vx * dt * sp; c.y += c.vy * dt * sp; wrap(c, 80, W, H);
+        const pose = S.state === "idle" ? "sleep" : S.state === "working" ? "normal" : Math.floor(t * 4 + i) % 2 ? "wave" : "normal";
+        const leg = S.state === "working" ? Math.floor(t * 6 + i) % 2 : 0;
+        c.rot += dt * (S.state === "done" ? 4 : 0.15);
+        const ang = S.state === "done" ? c.rot : Math.sin(t * 0.5 + c.ph) * 0.35;
+        const jitter = S.state === "waiting" ? Math.sin(t * 30 + i) * c.ps * 0.6 : 0;
+        g.save(); g.translate(c.x + jitter, c.y); g.rotate(ang);
+        drawCrab(g, 0, c.ps * 4.5, c.ps, pose, leg, p.crab, p.eye, false);
+        g.restore();
+        if (i === 0 && S.state === "idle") zzz(g, dt, c.x + c.ps * 6, c.y - c.ps * 5, c.ps, p.fg, "Space Grotesk, sans-serif");
+        if (S.state === "waiting") bubble(g, c.x + c.ps * 9, c.y - c.ps * 9, c.ps, p.warn, p.eye, "!", "Space Grotesk, sans-serif");
+      });
+      drawConfetti(g, dt);
+    },
+  },
+
+  // Every live session is one of the logo's robot fish: busy ones swim around, one that needs you swims up to the
+  // glass and taps it, finished ones settle on the sand and doze. The crab still walks the sand.
+  aquarium: {
+    FINS: ["#5fd3ff", "#ff8ad8", "#9cff6a", "#ffb86b", "#b48cff"],
+    init() {
+      this.k = clamp(Math.min(W, H) / 900, 0.6, 1.4); // fish size
+      this.fish = this.fish || new Map(); // kept across resizes, so fish don't jump
+      this.rays = Array.from({ length: 5 }, (_, i) => ({ x: (i + 0.5) / 5, w: rand(0.03, 0.07), sp: rand(0.05, 0.12), ph: rand(TAU) }));
+      this.bubbles = Array.from({ length: 46 }, () => this.newBubble(true));
+      this.puffs = [];
+      const side = () => (Math.random() < 0.5 ? rand(0.02, 0.3) : rand(0.7, 0.98)); // plants stay clear of the middle
+      this.plants = Array.from({ length: 9 }, () => ({ x: side() * W, h: rand(70, 210) * this.k, n: 2 + (Math.random() * 3 | 0), ph: rand(TAU), c: pick(["#2fae6a", "#58d27f", "#1f8a55", "#3fc27a"]), back: Math.random() < 0.45 }));
+      this.rocks = Array.from({ length: 6 }, () => ({ x: side() * W, rx: rand(18, 46) * this.k, ry: rand(10, 24) * this.k, c: pick(["#2f4d63", "#3b5d73", "#28465a"]) }));
+    },
+    newBubble(init) {
+      return { x: rand(W), y: init ? rand(H) : L.ground + rand(0, 20), r: rand(1.5, 5) * this.k, v: rand(18, 46), ph: rand(TAU) };
+    },
+    hash(id) { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); },
+    swimBox() { return { x0: W * 0.08, x1: W * 0.92, y0: H * 0.24, y1: L.ground - 90 * this.k }; },
+    // The text and cards on screen. Fish pick spots away from them and fade while passing behind,
+    // so a white fish never sits behind white text. Measured at most twice a second.
+    keepOut(t) {
+      if (this.koAt !== undefined && t - this.koAt < 0.5) return this.ko;
+      this.koAt = t;
+      const els = document.querySelectorAll("#headline, #tagline, #nowline, #plan, #sessions .sess, #cal, #usage, #note, .clock, #brand");
+      this.ko = [...els].map((e) => e.getBoundingClientRect()).filter((r) => r.width && r.height);
+      return this.ko;
+    },
+    covered(x, y, pad, t) { return this.keepOut(t).some((r) => x > r.left - pad && x < r.right + pad && y > r.top - pad && y < r.bottom + pad); },
+    syncFish(live, dt) {
+      const seen = new Set();
+      for (const s of live) {
+        seen.add(s.id);
+        if (this.fish.has(s.id)) { this.fish.get(s.id).s = s; continue; }
+        const B = this.swimBox();
+        this.fish.set(s.id, { s, x: rand(B.x0, B.x1), y: rand(B.y0, B.y1), vx: 0, vy: 0, face: Math.random() < 0.5 ? -1 : 1, tx: 0, ty: 0, retarget: 0,
+          fin: this.FINS[this.hash(s.id) % this.FINS.length], ph: rand(TAU), sc: 1, tilt: 0, tap: rand(1), puff: rand(2), alpha: 0, behind: false });
+      }
+      for (const [id, f] of this.fish) {
+        if (seen.has(id)) { f.alpha += clamp((f.behind ? 0.28 : 1) - f.alpha, -dt * 2.5, dt * 1.5); continue; }
+        f.alpha -= dt * 1.5; // a session that ended fades out
+        if (f.alpha <= 0) this.fish.delete(id);
+      }
+    },
+    steer(f, tx, ty, speed, dt) {
+      const dx = tx - f.x, dy = ty - f.y, d = Math.hypot(dx, dy) || 1, v = Math.min(speed, d * 2);
+      f.vx += ((dx / d) * v - f.vx) * Math.min(1, dt * 2.2);
+      f.vy += ((dy / d) * v - f.vy) * Math.min(1, dt * 2.2);
+      f.x += f.vx * dt; f.y += f.vy * dt;
+      if (Math.abs(f.vx) > 6) f.face = Math.sign(f.vx);
+      return d;
+    },
+    updateFish(f, t, dt, waitIdx, waitCount) {
+      const k = this.k, st = f.s.state === "thinking" ? "working" : f.s.state, B = this.swimBox();
+      f.lastMode = f.mode; f.mode = st;
+      if (st === "waiting") {
+        // Up to the glass beside the hero, alternating sides, and bigger: it's closer to you.
+        const slot = waitIdx >> 1, side = waitIdx % 2 ? 1 : -1;
+        const tx = clamp(L.hx + side * (L.hr * 1.9 + 70 * k + slot * 130 * k), B.x0, B.x1), ty = L.hy + 10 * k;
+        const d = this.steer(f, tx, ty, 160 * k, dt);
+        if (d < 30) f.face = side < 0 ? 1 : -1; // facing the middle
+        f.sc += (1.55 - f.sc) * Math.min(1, dt * 3);
+        f.tilt += (0 - f.tilt) * Math.min(1, dt * 4);
+        f.tap = (f.tap + dt / 0.9) % 1;
+      } else if (st === "done") {
+        // Sink to the sand, somewhere you can see it (not under the task list), and doze there.
+        const rest = L.ground - 14 * k;
+        if (f.restX === undefined || f.mode !== f.lastMode) {
+          f.restX = clamp(f.x, B.x0, B.x1);
+          for (let i = 0; i < 16 && this.covered(f.restX, rest, 40 * k, t); i++) f.restX = rand(B.x0, B.x1);
+        }
+        const d = this.steer(f, f.restX, rest, 40 * k, dt);
+        f.sc += (1 - f.sc) * Math.min(1, dt * 2);
+        f.tilt += ((d < 8 ? 0.16 : 0.05) - f.tilt) * Math.min(1, dt * 2);
+        f.puff -= dt;
+        if (f.puff < 0 && d < 8) { f.puff = rand(2.5, 4); this.puffs.push({ x: f.x + f.face * 26 * k, y: f.y - 14 * k, r: 2.5 * k, life: 3 }); }
+      } else {
+        // Swim between random spots in the tank.
+        f.retarget -= dt;
+        if (f.retarget <= 0 || Math.hypot(f.tx - f.x, f.ty - f.y) < 24) {
+          for (let i = 0; i < 12; i++) { f.tx = rand(B.x0, B.x1); f.ty = rand(B.y0, B.y1); if (!this.covered(f.tx, f.ty, 50 * k, t)) break; }
+          f.retarget = rand(4, 9);
+        }
+        this.steer(f, f.tx, f.ty, 75 * k, dt);
+        f.y += Math.sin(t * 2.2 + f.ph) * 6 * k * dt;
+        f.sc += (1 - f.sc) * Math.min(1, dt * 2);
+        f.tilt += (clamp(f.vy / 220, -0.3, 0.3) - f.tilt) * Math.min(1, dt * 3);
+        f.puff -= dt;
+        if (f.puff < 0) { f.puff = rand(1.2, 2.6); this.puffs.push({ x: f.x + f.face * 30 * k * f.sc, y: f.y - 4 * k, r: rand(1.5, 3) * k, life: 2.4 }); }
+      }
+    },
+    drawFish(g, f, t, p) {
+      const k = this.k * f.sc, st = f.mode, flap = Math.sin(t * (st === "working" ? 11 : st === "waiting" ? 7 : 2.5) + f.ph);
+      const lunge = st === "waiting" ? Math.max(0, Math.sin(f.tap * TAU)) ** 6 : 0; // the tap: a quick nudge toward the glass
+      g.save(); g.globalAlpha = f.alpha;
+      g.translate(f.x + f.face * lunge * 10 * k, f.y); g.rotate(f.tilt * f.face); g.scale(k * f.face, k * (1 + lunge * 0.04));
+      // tail and fins: see-through, in this fish's colour
+      g.fillStyle = hexA(f.fin, 0.55);
+      g.beginPath(); g.moveTo(-24, 0); g.quadraticCurveTo(-36, -4, -46, -15 + flap * 4); g.quadraticCurveTo(-40, 0, -46, 15 - flap * 4); g.quadraticCurveTo(-36, 4, -24, 0); g.fill();
+      g.beginPath(); g.ellipse(-5, -19, 12, 6, -0.35 + flap * 0.05, 0, TAU); g.fill();
+      // body: a white capsule, a little shaded underneath
+      const body = g.createLinearGradient(0, -20, 0, 20);
+      body.addColorStop(0, "#ffffff"); body.addColorStop(1, "#c9d8e6");
+      g.fillStyle = body; g.beginPath(); g.roundRect ? g.roundRect(-28, -19, 54, 38, 19) : g.ellipse(-1, 0, 27, 19, 0, 0, TAU); g.fill();
+      g.fillStyle = hexA(f.fin, 0.85); g.beginPath(); g.arc(-15, 2, 4.2, 0, TAU); g.fill(); // the "ear"
+      // visor and eyes
+      g.fillStyle = "#0b1526"; g.beginPath(); g.roundRect ? g.roundRect(-5, -13, 27, 24, 10) : g.rect(-5, -13, 27, 24); g.fill();
+      g.fillStyle = "rgba(255,255,255,.22)"; g.beginPath(); g.ellipse(4, -9, 7, 2.2, -0.2, 0, TAU); g.fill();
+      const eye = st === "waiting" ? p.warn : p.accent;
+      g.shadowColor = eye; g.shadowBlur = 6; g.strokeStyle = eye; g.fillStyle = eye; g.lineWidth = 2.2; g.lineCap = "round";
+      if (st === "waiting") { for (const ex of [3, 14]) { g.beginPath(); g.arc(ex, -2, 3.3, 0, TAU); g.fill(); } }
+      else if (st === "done") { for (const ex of [3, 14]) { g.beginPath(); g.arc(ex, -3, 3, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke(); } } // asleep
+      else if ((t + f.ph) % 4.5 < 0.13) { g.beginPath(); g.moveTo(1, -2); g.lineTo(6, -2); g.moveTo(12, -2); g.lineTo(17, -2); g.stroke(); } // blink
+      else { for (const ex of [3, 14]) { g.beginPath(); g.moveTo(ex, -5); g.lineTo(ex, 1); g.stroke(); } }
+      g.shadowBlur = 0;
+      g.fillStyle = hexA(f.fin, 0.6); g.beginPath(); g.ellipse(-6, 12, 7, 3.5, 0.5 + flap * 0.35, 0, TAU); g.fill(); // side fin
+      g.restore();
+      // ripples on the glass where it taps, and its name underneath
+      if (st === "waiting" && f.tap < 0.6) {
+        const r = (f.tap / 0.6) * 26 * this.k;
+        g.strokeStyle = `rgba(255,255,255,${(0.5 * (1 - f.tap / 0.6) * f.alpha).toFixed(3)})`; g.lineWidth = 1.5;
+        g.beginPath(); g.ellipse(f.x + f.face * 30 * k, f.y, r * 0.55, r, 0, 0, TAU); g.stroke();
+      }
+      if (st === "waiting") bubble(g, f.x + f.face * 6 * k, f.y - 34 * k, Math.max(3, Math.round(4 * this.k)), p.warn, p.eye, "!", "ui-rounded, -apple-system, sans-serif");
+      if (config.showDetails) {
+        const name = String(f.s.project || "claude"), label = name.length > 22 ? name.slice(0, 21) + "…" : name;
+        g.globalAlpha = f.alpha * (st === "done" ? 0.6 : 0.85);
+        g.font = `600 ${Math.round(12 * this.k)}px ui-rounded, -apple-system, sans-serif`; g.textAlign = "center";
+        g.fillStyle = st === "waiting" ? p.warn : p.fg;
+        g.fillText(label, f.x, st === "done" ? f.y - 26 * k : f.y + 34 * k);
+        g.globalAlpha = 1;
+      }
+    },
+    drawPlants(g, t, back) {
+      for (const pl of this.plants) {
+        if (pl.back !== back) continue;
+        g.strokeStyle = pl.c; g.lineCap = "round"; g.globalAlpha = back ? 0.55 : 0.95;
+        for (let i = 0; i < pl.n; i++) {
+          const x = pl.x + (i - (pl.n - 1) / 2) * 9 * this.k, h = pl.h * (0.7 + 0.3 * ((i * 37) % 10) / 10);
+          const sway = Math.sin(t * 0.9 + pl.ph + i) * h * 0.18;
+          g.lineWidth = (back ? 6 : 8) * this.k;
+          g.beginPath(); g.moveTo(x, L.ground + 6); g.quadraticCurveTo(x - sway * 0.4, L.ground - h * 0.5, x + sway, L.ground - h); g.stroke();
+        }
+      }
+      g.globalAlpha = 1;
+    },
+    draw(g, t, dt, S) {
+      const p = PAL.aquarium, k = this.k;
+      g.imageSmoothingEnabled = true;
+      const bg = g.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, "#0b4a7d"); bg.addColorStop(0.55, "#073259"); bg.addColorStop(1, "#04203c");
+      g.fillStyle = bg; g.fillRect(0, 0, W, H);
+      // light from above
+      g.globalCompositeOperation = "lighter";
+      for (const r of this.rays) {
+        const x = W * r.x + Math.sin(t * r.sp + r.ph) * W * 0.04, top = W * r.w, bot = top * 4.5;
+        const gr = g.createLinearGradient(0, 0, 0, H * 0.9);
+        gr.addColorStop(0, "rgba(160,225,255,.09)"); gr.addColorStop(1, "rgba(160,225,255,0)");
+        g.fillStyle = gr; g.beginPath(); g.moveTo(x - top, 0); g.lineTo(x + top, 0); g.lineTo(x + bot + W * 0.05, H * 0.9); g.lineTo(x - bot + W * 0.05, H * 0.9); g.fill();
+      }
+      g.globalCompositeOperation = "source-over";
+      // rising bubbles
+      g.strokeStyle = "rgba(220,245,255,.4)"; g.lineWidth = 1;
+      for (const b of this.bubbles) {
+        b.y -= b.v * dt; b.x += Math.sin(t * 2 + b.ph) * 8 * dt;
+        if (b.y < -10) Object.assign(b, this.newBubble(false));
+        g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.stroke();
+      }
+      const col = stateColor(p, S.state), hp = S.hero, R = L.hr * 2.6;
+      const glow = g.createRadialGradient(L.hx, L.hy, 0, L.hx, L.hy, R);
+      glow.addColorStop(0, hexA(col, 0.3)); glow.addColorStop(1, hexA(col, 0));
+      g.fillStyle = glow; g.fillRect(L.hx - R, L.hy - R, R * 2, R * 2);
+      burst(g, L.hx, L.hy, L.hr * hp.scale, hp.rot, col, 1, hp.breathe, t);
+      this.drawPlants(g, t, true);
+      // the fish
+      this.syncFish(S.live || [], dt);
+      const waiting = [...this.fish.values()].filter((f) => f.s.state === "waiting").sort((a, b) => String(a.s.id).localeCompare(String(b.s.id)));
+      for (const f of this.fish.values()) { this.updateFish(f, t, dt, waiting.indexOf(f), waiting.length); f.behind = f.mode !== "waiting" && this.covered(f.x, f.y, 20 * this.k, t); }
+      const order = [...this.fish.values()].sort((a, b) => a.sc - b.sc); // the ones at the glass in front
+      for (const f of order) this.drawFish(g, f, t, p);
+      g.strokeStyle = "rgba(220,245,255,.55)"; g.lineWidth = 1;
+      this.puffs = this.puffs.filter((b) => (b.life -= dt) > 0);
+      for (const b of this.puffs) { b.y -= 30 * dt; b.r += 0.6 * dt; g.globalAlpha = Math.min(1, b.life); g.beginPath(); g.arc(b.x + Math.sin(b.life * 4) * 2, b.y, b.r, 0, TAU); g.stroke(); }
+      g.globalAlpha = 1;
+      // sand, rocks, the front plants
+      const sand = g.createLinearGradient(0, L.ground - 10, 0, H);
+      sand.addColorStop(0, "#c9ad74"); sand.addColorStop(1, "#8f7447");
+      g.fillStyle = sand; g.beginPath(); g.moveTo(0, H);
+      for (let x = 0; x <= W; x += 24) g.lineTo(x, L.ground + 1 + Math.sin(x * 0.013) * 3 + Math.sin(x * 0.041) * 1.5);
+      g.lineTo(W, H); g.fill();
+      for (const r of this.rocks) {
+        g.fillStyle = r.c; g.beginPath(); g.ellipse(r.x, L.ground + 4, r.rx, r.ry, 0, Math.PI, TAU); g.fill();
+        g.fillStyle = "rgba(255,255,255,.08)"; g.beginPath(); g.ellipse(r.x - r.rx * 0.3, L.ground + 4 - r.ry * 0.6, r.rx * 0.35, r.ry * 0.18, -0.2, 0, TAU); g.fill();
+      }
+      this.drawPlants(g, t, false);
+      drawGroundCrab(g, dt, S, p, Math.round(clamp(W / 220, 3, 8)), W, L.ground, "ui-rounded, -apple-system, sans-serif");
+      // the glass: faint highlights down the sides
+      for (const [x0, x1] of [[0, 34], [W, W - 34]]) {
+        const gl = g.createLinearGradient(x0, 0, x1, 0);
+        gl.addColorStop(0, "rgba(255,255,255,.09)"); gl.addColorStop(1, "rgba(255,255,255,0)");
+        g.fillStyle = gl; g.fillRect(Math.min(x0, x1), 0, 34, H);
+      }
+      drawConfetti(g, dt);
+    },
+  },
+};
+
+const CONFETTI = {
+  warm: ["#d97757", "#f0eee6", "#f2b350", "#a8c9a0"],
+  pixel: ["#ff7a4d", "#ffd23f", "#63f5a0", "#f3e9dc"],
+  cosmic: ["#ff9a76", "#c4a7ff", "#7ee0c3", "#ffd0a8"],
+  aquarium: ["#5fd3ff", "#ff8ad8", "#9cff6a", "#ffd166", "#ffffff"],
+};
+
+// The Agent Aquarium logo (brand/agent-aquarium-120.png), 48px for the 22px header mark.
+const MARK = '<img class="mark" alt="" src="data:image/png;base64,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">';
+const BRAND = {
+  warm: () => `${MARK}<span>Agent Aquarium</span>`,
+  pixel: () => `<span>&gt; AQUARIUM.EXE</span>`,
+  cosmic: () => `${MARK}<span>agent aquarium</span><span class="sub">/ mission control</span>`,
+  aquarium: () => `${MARK}<span>Agent Aquarium</span>`,
+};
+
+/* ---------- status derivation ---------- */
+function makeDemo(kind) {
+  const now = Date.now();
+  const list = [
+    { id: "d1", project: "web-app", state: "working", action: "Update the settings page styles", task_started: now - 754e3, updated_at: now,
+      plan: [["Read the settings page and theme tokens", "completed"], ["Add a dark color palette", "completed"], ["Follow the system appearance", "completed"], ["Wire up the appearance switch", "completed"], ["Update the settings page styles", "in_progress"], ["Run the tests and fix failures", "pending"]].map(([text, status]) => ({ text, status })) },
+    { id: "d2", project: "api-server", state: "thinking", action: "Thinking", task_started: now - 128e3, updated_at: now },
+    { id: "d3", project: "docs-site", state: "done", action: "Finished", task_started: now - 1500e3, done_at: now - 180e3, updated_at: now - 180e3 },
+  ];
+  if (kind === "waiting") Object.assign(list[0], { state: "waiting", action: "Claude needs your permission to use Bash" });
+  if (kind === "done") {
+    list.forEach((s, i) => Object.assign(s, { state: "done", action: "Finished", done_at: now - i * 240e3 - 5e3 }));
+    list[0].plan.forEach((p) => (p.status = "completed"));
+  }
+  return kind === "idle" ? [] : list;
+}
+const RANK = { waiting: 0, working: 1, thinking: 1, done: 2, idle: 3 };
+const DONE_MS = 10 * 60e3;
+// Several sessions in the same state: stay on one and rotate every 12s, instead of jumping
+// to whichever session ran a tool most recently (which would flicker on every tool call).
+const ROTATE_MS = 12000;
+let focusId = null, focusSince = 0;
+function pickFocus(cands, now) {
+  cands.sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  let i = cands.findIndex((s) => s.id === focusId);
+  if (i < 0) { i = 0; focusSince = now; }
+  else if (cands.length > 1 && now - focusSince > ROTATE_MS) { i = (i + 1) % cands.length; focusSince = now; }
+  focusId = cands[i].id;
+  return { focus: cands[i], focusIndex: i, focusCount: cands.length };
+}
+function derive() {
+  const now = Date.now();
+  const list = demo ? demoList : sessions;
+  if (demo) for (const s of list) if (s.state !== "done") s.updated_at = now;
+  // Idle sessions are never shown; finished ones only for DONE_MS after they finish.
+  const live = list.filter((s) => {
+    if (s.state === "idle") return false;
+    if (s.state === "done") return now - (s.done_at || s.updated_at || 0) < DONE_MS;
+    return now - (s.updated_at || 0) < 45 * 60e3;
+  }).sort((a, b) => RANK[a.state] - RANK[b.state] || b.updated_at - a.updated_at);
+  const waiting = live.filter((s) => s.state === "waiting");
+  const working = live.filter((s) => s.state === "working" || s.state === "thinking");
+  const done = live.find((s) => s.state === "done");
+  if (waiting.length) return { state: "waiting", ...pickFocus(waiting, now), live };
+  // Prefer sessions with a task list so the list doesn't vanish whenever the rotation lands
+  // on a session that hasn't made a plan; plan-less sessions still show as cards.
+  const planned = working.filter((s) => Array.isArray(s.plan) && s.plan.length);
+  if (working.length) return { state: "working", ...pickFocus(planned.length ? planned : working, now), live };
+  if (done) return { state: "done", focus: done, focusIndex: 0, focusCount: 1, live };
+  return { state: "idle", focus: null, live };
+}
+
+/* ---------- calendar ---------- */
+function demoCalendar() {
+  const now = Date.now(), min = 60e3, at = (m) => Math.round((now + m * min) / (5 * min)) * 5 * min;
+  return { feeds: [{ id: "demo", ok: true }], events: [
+    { title: "Weekly product sync", start: at(-20), end: at(25) },
+    { title: "Design review: new widget", start: at(70), end: at(100) },
+  ] };
+}
+const hhmm = (t) => new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+function inMin(ms) {
+  const m = Math.max(1, Math.round(ms / 60e3));
+  return m < 60 ? `in ${m} min` : `in ${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}`;
+}
+// The meeting you're in (and when you're actually free, across back-to-back meetings) plus the next one.
+function meetings(now = Date.now()) {
+  const cal = demo ? demoCalendar() : calendar;
+  const evs = (cal.events || []).filter((e) => !e.allDay && e.end > now).sort((a, b) => a.start - b.start);
+  const cur = evs.filter((e) => e.start <= now);
+  let freeAt = 0;
+  if (cur.length) {
+    freeAt = Math.max(...cur.map((e) => e.end));
+    for (const e of evs) if (e.start > now && e.start <= freeAt + 60e3) freeAt = Math.max(freeAt, e.end);
+  }
+  const midnight = new Date(now); midnight.setHours(24, 0, 0, 0);
+  return {
+    connected: (cal.feeds || []).length > 0,
+    failing: (cal.feeds || []).length > 0 && cal.feeds.every((f) => f.ok === false),
+    now: cur.sort((a, b) => b.start - a.start)[0] || null, // the most recently started one
+    freeAt,
+    next: evs.find((e) => e.start > now) || null,
+    midnight: midnight.getTime(),
+  };
+}
+function calCard() {
+  const now = Date.now(), M = meetings(now), titles = config.calTitles !== false;
+  if (!M.connected) return { cls: "", html: "" };
+  const ttl = (e) => (titles ? esc(e.title) : "");
+  const nextLine = (e) => {
+    const day = e.start >= M.midnight ? `Tomorrow ${hhmm(e.start)}` : `Next ${hhmm(e.start)}`;
+    return `<div class="nx"><span>${day}</span>${titles ? `<b>${esc(e.title)}</b>` : ""}</div>`;
+  };
+  if (M.now) {
+    const e = M.now, p = clamp((now - e.start) / Math.max(1, e.end - e.start), 0, 1);
+    const left = Math.max(1, Math.round((e.end - now) / 60e3));
+    const after = M.next && M.next.start < M.midnight + 12 * 3600e3 ? nextLine(M.next) : "";
+    return { cls: "busy", html: `<div class="k"><span class="cdot"></span>In a meeting<span class="when">until ${hhmm(M.freeAt)}</span></div>
+      ${titles ? `<div class="ttl">${ttl(e)}</div>` : ""}<div class="sub">${hhmm(e.start)} – ${hhmm(e.end)} · ${left} min left</div>
+      <div class="bar"><i style="width:${(p * 100).toFixed(1)}%"></i></div>${after}` };
+  }
+  if (M.next && M.next.start < M.midnight) {
+    const e = M.next, soon = e.start - now <= 10 * 60e3;
+    const when = e.start - now < 3 * 3600e3 ? inMin(e.start - now) : `at ${hhmm(e.start)}`;
+    return { cls: soon ? "soon" : "", html: `<div class="k"><span class="cdot"></span>${soon ? "Starting soon" : "Next meeting"}<span class="when">${when}</span></div>
+      ${titles ? `<div class="ttl">${ttl(e)}</div>` : ""}<div class="sub">${hhmm(e.start)} – ${hhmm(e.end)}</div>` };
+  }
+  if (M.failing) return { cls: "quiet", html: `<div class="k"><span class="cdot"></span>Calendar isn't syncing</div>` };
+  const tmrw = M.next && M.next.start < M.midnight + DAY_MS ? `<div class="sub">Tomorrow ${hhmm(M.next.start)}${titles ? ` · ${esc(M.next.title)}` : ""}</div>` : "";
+  return { cls: "quiet", html: `<div class="k"><span class="cdot"></span>No more meetings today</div>${tmrw}` };
+}
+const DAY_MS = 864e5;
+
+/* ---------- plan usage ---------- */
+function demoUsage() {
+  const now = Date.now();
+  return { connected: true, updated_at: now, five_hour: { used: 62, resets_at: now + 130 * 60e3 }, seven_day: { used: 41, resets_at: now + 3 * DAY_MS + 5 * 3600e3 } };
+}
+// A time within the next day, otherwise just the weekday (enough for the weekly limit, and it fits the card).
+function resetsText(at, now) {
+  return at - now < DAY_MS ? hhmm(at) : new Date(at).toLocaleDateString([], { weekday: "long" });
+}
+function usageCard() {
+  const u = demo ? demoUsage() : usage, now = Date.now();
+  if ((config.showUsage !== true && !demo) || !u || (!u.five_hour && !u.seven_day)) return "";
+  const row = (label, w) => {
+    if (!w) return "";
+    const fresh = w.resets_at <= now; // the window reset since Claude Code last reported it
+    const pct = fresh ? 0 : Math.round(w.used);
+    const right = fresh ? "<b>0%</b> · new window" : pct >= 100 ? `<b>Limit reached</b> · ${resetsText(w.resets_at, now)}` : `<b>${pct}%</b> · resets ${resetsText(w.resets_at, now)}`;
+    return `<div class="row${pct >= 80 ? " high" : ""}"><div class="l"><span>${label}</span><span>${right}</span></div><div class="bar"><i style="width:${clamp(pct, 0, 100)}%"></i></div></div>`;
+  };
+  const stale = now - (u.updated_at || 0) > 30 * 60e3 ? `<span class="when">as of ${ago(now - u.updated_at)}</span>` : "";
+  return `<div class="k">Plan usage${stale}</div>${row("5-hour", u.five_hour)}${row("Weekly", u.seven_day)}`;
+}
+
+/* ---------- DOM rendering ---------- */
+// Which agent the headline names: Claude Code today; a hook can tag sessions with another agent (e.g. "codex").
+const agentName = (s) => esc((s && s.agent) || "claude");
+function headlineHTML(state, focus) {
+  const who = agentName(focus);
+  if (state === "working") return `${who} is <em>working</em>`;
+  if (state === "waiting") return `${who} <em>needs you</em>`;
+  if (state === "done") return `${who} is <em>done</em>`;
+  return `${who} is <em>${IDLE_WORDS[idleIdx % IDLE_WORDS.length]}</em>`;
+}
+function setHeadline(html) {
+  const h = $("#headline");
+  if (h.innerHTML === html) return;
+  h.innerHTML = html;
+  tween(h, 700, 14, 6);
+  requestAnimationFrame(measure);
+}
+let lastTag = "";
+function setTagline(text) {
+  if (text === lastTag) return;
+  lastTag = text;
+  $("#tagline").innerHTML = `<span id="spin"></span><span class="fade">${esc(text)}</span>`;
+  tween($("#tagline .fade"), 500, 6, 0);
+}
+// Enter fades run on the rAF loop: some screensaver/embedded web views freeze the CSS animation timeline.
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const tweens = new Map();
+function tween(el, ms, dy, blur) { if (!REDUCED) tweens.set(el, { start: performance.now(), ms, dy, blur }); }
+function stepTweens(now) {
+  for (const [el, tw] of tweens) {
+    const p = clamp((now - tw.start) / tw.ms, 0, 1), e = 1 - Math.pow(1 - p, 3);
+    if (p >= 1 || !el.isConnected) { el.style.opacity = el.style.transform = el.style.filter = ""; tweens.delete(el); continue; }
+    el.style.opacity = e;
+    el.style.transform = `translateY(${(1 - e) * tw.dy}px)`;
+    el.style.filter = tw.blur ? `blur(${(1 - e) * tw.blur}px)` : "";
+  }
+}
+function taglineText(D) {
+  if (D.state === "working") return `${VERBS[verbIdx % VERBS.length]}…`;
+  if (D.state === "waiting") return "Blocked on you. Come say hi.";
+  if (D.state === "done") return "All wrapped up. Ready for the next one.";
+  return online || demo ? "No active sessions. The crab is resting." : "Offline mode: start the server for live status.";
+}
+function nowlineHTML(D) {
+  const f = D.focus, now = Date.now();
+  if (!f) return "";
+  const det = config.showDetails;
+  const parts = [];
+  if (D.state === "working") {
+    parts.push(`<span class="txt">${esc(det ? f.action || "Thinking" : "Working")}</span>`);
+    if (det) parts.push(`<span class="sep">·</span><span class="txt">${esc(f.project)}</span>`);
+    if (f.task_started) parts.push(`<span class="sep">·</span><span class="t">${fmtDur(now - f.task_started)}</span>`);
+  } else if (D.state === "waiting") {
+    parts.push(`<span class="txt">${esc(det ? f.action || "Waiting for you" : "Waiting for you")}</span>`);
+    if (det) parts.push(`<span class="sep">·</span><span class="txt">${esc(f.project)}</span>`);
+  } else if (D.state === "done") {
+    const took = f.task_started && f.done_at ? `Finished in ${fmtDur(f.done_at - f.task_started)}` : "Finished";
+    parts.push(`<span class="txt">${took}</span>`);
+    if (det) parts.push(`<span class="sep">·</span><span class="txt">${esc(f.project)}</span>`);
+    parts.push(`<span class="sep">·</span><span class="t">${ago(now - f.done_at)}</span>`);
+  }
+  return `<span class="dot"></span>${parts.join("")}`;
+}
+function sessionsHTML(D) {
+  if (!config.showDetails || D.live.length < 2) return "";
+  const now = Date.now();
+  return D.live.slice(0, 4).map((s) => {
+    const st = s.state === "thinking" ? "working" : s.state;
+    let time = s.state === "done" ? `done ${ago(now - (s.done_at || s.updated_at))}` : s.task_started && s.state !== "idle" ? fmtDur(now - s.task_started) : "";
+    if (Array.isArray(s.plan) && s.plan.length) time += `${time ? " · " : ""}step ${Math.min(s.plan.length, s.plan.filter((p) => p.status === "completed").length + 1)}/${s.plan.length}`;
+    const focus = D.focus && s.id === D.focus.id ? " focus" : "";
+    return `<div class="sess${focus}"><div class="top"><span class="p">${esc(s.project)}</span><span class="chip ${st}">${STATE_LABEL[s.state] || s.state}</span></div>
+      <div class="a">${esc(s.action || "")}</div>${time ? `<div class="tm">${time}</div>` : ""}</div>`;
+  }).join("");
+}
+const PLAN_ICON = {
+  completed: '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="8" fill="currentColor"/><path d="M4.6 8.3l2.2 2.2 4.6-4.8" fill="none" stroke="var(--bg)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  in_progress: '<svg class="ic spin" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="1.8"/><path d="M8 1.6a6.4 6.4 0 0 1 6.4 6.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  pending: '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+};
+// The agent's task list for the session in focus, as a row of little cards: the current task (or the next one
+// to start) lit, the ones after it readable, finished ones dimmed. stepCarousel slides the row along.
+function planHTML(D) {
+  const f = D.focus;
+  if (!config.showDetails || !f || !Array.isArray(f.plan) || !f.plan.length) return "";
+  const plan = f.plan, done = plan.filter((p) => p.status === "completed").length;
+  let i = plan.findIndex((p) => p.status === "in_progress");
+  if (i < 0) { const open = plan.findIndex((p) => p.status !== "completed"); i = open < 0 ? plan.length - 1 : open; }
+  const cards = plan.map((p, j) => {
+    const st = PLAN_ICON[p.status] ? p.status : "pending";
+    return `<div class="tc ${st}${j === i ? " now" : ""}">${PLAN_ICON[st]}<span class="tx">${esc(p.text)}</span></div>`;
+  }).join("");
+  const meta = [`${done}/${plan.length}`, esc(f.project)];
+  if (f.task_started && D.state !== "done") meta.push('<span class="tm"></span>'); // ticks in render(), without rebuilding
+  if (D.focusCount > 1) meta.push(`session ${D.focusIndex + 1} of ${D.focusCount}`);
+  return `<div class="rail"><div class="track" data-session="${esc(f.id)}">${cards}</div></div><div class="meta">${meta.join(" · ")}</div>`;
+}
+// Slides the task cards so the current one sits a third of the way in, leaving room to read what's next (or
+// centers the whole row when it fits). Eased on the frame loop (screensaver web views
+// can freeze CSS animations); a new session's list snaps into place instead of sliding across.
+const carousel = { x: null, session: null };
+function stepCarousel(dt) {
+  const track = $("#plan .track"), cur = track && track.querySelector(".tc.now");
+  if (!cur) { carousel.x = null; return; }
+  const railW = track.parentElement.clientWidth, rowW = track.scrollWidth;
+  const target = rowW <= railW * 0.88 ? (railW - rowW) / 2 : clamp(railW * 0.34 - cur.offsetLeft, railW * 0.94 - rowW, railW * 0.06);
+  if (carousel.x === null || carousel.session !== track.dataset.session) { carousel.x = target; carousel.session = track.dataset.session; }
+  else carousel.x += (target - carousel.x) * Math.min(1, dt * (REDUCED ? 60 : 4));
+  track.style.transform = `translateX(${carousel.x.toFixed(1)}px)`;
+}
+let spinners = [];
+let lastPlanHTML = null;
+let lastSessHTML = null;
+let lastCalHTML = null;
+let lastUsageHTML = null;
+function render() {
+  const D = derive();
+  current = D;
+  document.body.dataset.state = D.state;
+  if (D.state !== prevState) {
+    if (D.state === "done" && (prevState === "working" || prevState === "waiting")) {
+      popConfetti(L.hx, L.hy, CONFETTI[config.theme]); hero.spd = 6;
+    }
+    prevState = D.state;
+  }
+  setHeadline(headlineHTML(D.state, D.focus));
+  setTagline(taglineText(D));
+  const custom = config.customText || "";
+  if (custom !== note.text) buildNote(custom);
+  const cc = calCard();
+  if (cc.html !== lastCalHTML) { const el = $("#cal"); el.className = cc.cls; el.innerHTML = cc.html; lastCalHTML = cc.html; }
+  const uh = usageCard();
+  if (uh !== lastUsageHTML) { $("#usage").innerHTML = uh; lastUsageHTML = uh; }
+  const ph = planHTML(D);
+  $("#nowline").innerHTML = ph ? "" : nowlineHTML(D); // the bar already shows the step, project and time
+  if (ph !== lastPlanHTML) {
+    $("#plan").innerHTML = ph; lastPlanHTML = ph;
+    document.body.classList.toggle("has-plan", !!ph);
+    spinners = [...document.querySelectorAll("#plan .spin")];
+    stepCarousel(0); // the rebuilt row starts where the old one was, then slides
+    requestAnimationFrame(measure);
+  }
+  const tm = $("#plan .tm");
+  if (tm && D.focus && D.focus.task_started) tm.textContent = fmtDur(Date.now() - D.focus.task_started);
+
+  const sh = sessionsHTML(D);
+  if (sh !== lastSessHTML) { $("#sessions").innerHTML = sh; lastSessHTML = sh; requestAnimationFrame(measure); }
+  const d = new Date();
+  $("#time").textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  $("#date").textContent = d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+  $("#conn").textContent = demo ? `previewing “${demo}”` : online ? "live: connected to Claude Code" : "offline: run the server for live status";
+}
+
+/* ---------- theme switching + config ---------- */
+function setTheme(name, persist = true) {
+  if (!ALL_THEMES.includes(name)) return;
+  config.theme = name;
+  document.documentElement.dataset.theme = name;
+  $("#brand").innerHTML = BRAND[name]();
+  walker.x = -1; Z.list = []; confetti = [];
+  document.querySelectorAll("#themeBtns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.theme === name)));
+  if (W) { measure(); THEME_IMPL[name].init(); }
+  if (persist) saveConfig({ theme: name });
+}
+function saveConfig(patch) {
+  Object.assign(config, patch);
+  lastLocalChange = Date.now();
+  if ("theme" in patch) store.set("cl.theme", config.theme);
+  if ("customText" in patch) store.set("cl.text", config.customText);
+  if ("showDetails" in patch) store.set("cl.details", config.showDetails ? "1" : "0");
+  if (online) fetch("config", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(patch) }).catch(() => {});
+  render();
+}
+
+/* ---------- live status polling ---------- */
+async function poll() {
+  online = false; return render(); // website demo: no local server
+  try {
+    // The screensaver and the always-on display say when they're on screen, for the battery estimate.
+    const shown = document.hidden ? "" : SCREENSAVER ? "?shown=saver" : qs.has("display") ? "?shown=display" : "";
+    const r = await fetch(`status${shown}`, { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    online = true;
+    sessions = Array.isArray(j.sessions) ? j.sessions : [];
+    if (j.calendar && Array.isArray(j.calendar.events)) calendar = j.calendar;
+    usage = j.usage || null;
+    const c = j.config || {};
+    if (Array.isArray(c.themes)) setThemes(c.themes);
+    if (Date.now() - lastLocalChange > 3000) {
+      if (!themeFromUrl && c.theme && c.theme !== config.theme) setTheme(c.theme, false);
+      if (typeof c.customText === "string" && document.activeElement !== $("#customInput") && !qs.has("text")) config.customText = c.customText;
+      if (typeof c.showDetails === "boolean") { config.showDetails = c.showDetails; $("#details").checked = c.showDetails; }
+      if (typeof c.calTitles === "boolean") config.calTitles = c.calTitles;
+      if (typeof c.showUsage === "boolean") config.showUsage = c.showUsage;
+    }
+  } catch { online = false; calendar = { events: [], feeds: [] }; usage = null; }
+  if (!online) setThemes(THEMES); // offline: only the public themes
+  render();
+}
+// The theme list comes from the server; if the current theme isn't on it (e.g. after sign-out), fall back.
+function setThemes(list) {
+  const next = ALL_THEMES.filter((t) => list.includes(t));
+  if (next.join() !== THEMES.join()) { THEMES = next; buildThemeBtns(); }
+  if (!THEMES.includes(config.theme)) setTheme("warm", false);
+}
+
+/* ---------- picker UI ---------- */
+const SWATCH = { warm: "linear-gradient(135deg,#1f1e1d 50%,#d97757 50%)", pixel: "linear-gradient(135deg,#0d0c0b 50%,#63f5a0 50%)", cosmic: "linear-gradient(135deg,#140c30 50%,#c4a7ff 50%)", aquarium: "linear-gradient(135deg,#0a3d6b 50%,#5fd3ff 50%)" };
+function buildThemeBtns() {
+  $("#themeBtns").innerHTML = THEMES.map((t, i) => `<button data-theme="${t}" aria-pressed="${t === config.theme}"><span class="sw" style="background:${SWATCH[t]}"></span>${i + 1}. ${THEME_NAMES[t]}</button>`).join("");
+  $("#themeKeys").textContent = `1–${THEMES.length}`;
+}
+function buildPicker() {
+  buildThemeBtns();
+  $("#themeBtns").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setTheme(b.dataset.theme); });
+  const states = [["live", "Live"], ["working", "Working"], ["waiting", "Needs you"], ["done", "Done"], ["idle", "Idle"]];
+  $("#demoBtns").insertAdjacentHTML("beforeend", states.map(([k, l]) => `<button data-demo="${k}" aria-pressed="${k === "live"}">${l}</button>`).join("") +
+    `<label class="tog"><input type="checkbox" id="details"> Show details</label>`);
+  $("#demoBtns").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setDemo(b.dataset.demo === "live" ? null : b.dataset.demo); });
+  $("#details").checked = config.showDetails;
+  $("#details").addEventListener("change", (e) => saveConfig({ showDetails: e.target.checked }));
+  $("#customInput").value = config.customText;
+  const setText = () => saveConfig({ customText: $("#customInput").value.trim() });
+  $("#saveText").addEventListener("click", setText);
+  $("#clearText").addEventListener("click", () => { $("#customInput").value = ""; setText(); });
+  $("#customInput").addEventListener("keydown", (e) => { if (e.key === "Enter") setText(); e.stopPropagation(); });
+}
+function setDemo(kind) {
+  demo = kind; demoList = kind ? makeDemo(kind) : null;
+  document.querySelectorAll("#demoBtns button").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.demo === "live" && !kind) || b.dataset.demo === kind)));
+  render();
+}
+let hideTimer = 0;
+function wake() {
+  if (KIOSK || THUMB) return;
+  document.body.classList.remove("hide-cursor");
+  $("#picker").classList.add("show");
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => {
+    if ($("#picker").matches(":hover, :focus-within")) return wake();
+    $("#picker").classList.remove("show"); document.body.classList.add("hide-cursor");
+  }, 3500);
+}
+addEventListener("mousemove", wake);
+addEventListener("keydown", (e) => {
+  if (e.key >= "1" && e.key <= String(THEMES.length)) setTheme(THEMES[+e.key - 1]);
+  else if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const n = THEMES.length; setTheme(THEMES[(THEMES.indexOf(config.theme) + (e.key === "ArrowRight" ? 1 : n - 1) + n) % n]); }
+  else if (e.key === "d" || e.key === "D") { const order = [null, "working", "waiting", "done", "idle"]; setDemo(order[(order.indexOf(demo) + 1) % order.length]); }
+  else if (e.key === "h" || e.key === "H") saveConfig({ showDetails: !config.showDetails }), ($("#details").checked = config.showDetails);
+  else if (e.key === "f" || e.key === "F") document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+  else return;
+  wake();
+});
+
+/* ---------- message strip: every letter is a prop, the crab is the performer ---------- */
+const fx = $("#fx"), fxg = fx.getContext("2d");
+const ease = (p) => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2);
+const seg = (p, a, b) => clamp((p - a) / (b - a), 0, 1);
+const backOut = (p) => 1 + 2.70158 * Math.pow(p - 1, 3) + 1.70158 * Math.pow(p - 1, 2);
+const spring = (p) => Math.exp(-5 * p) * Math.cos(16 * p);
+const SCRAMBLE = "!<>-_/[]{}=+*^?#%01✺";
+const note = {
+  text: null, letters: [], fs: 24, ps: 3, anim: null, at: 0, gap: 1.2, lastIdx: -1, crumbs: [], dir: 1, // dir: 1 left-to-right, -1 right-to-left
+  crab: { x: 0, y: 0, vis: 0, pose: "normal", leg: 0, rot: 0, sy: 1, top: false },
+};
+const blankFx = () => ({ dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, op: 1, glyph: null, color: null });
+
+// Right-to-left text (Hebrew, Arabic…): the letters are inline blocks, which the bidi algorithm treats
+// as neutral, so the browser can't order them by itself. Each run of words in one direction gets its own
+// isolated, dir-tagged span (so a Hebrew message with an English word in it reads right), letters split
+// on whole characters (Hebrew points and emoji stay in one piece), and joining scripts keep each word whole
+// so Arabic letters still connect.
+const RTL_CH = /[\p{Script=Hebrew}\p{Script=Arabic}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}\p{Script=Samaritan}\p{Script=Mandaic}\p{Script=Adlam}]/u;
+const JOINING = /[\p{Script=Arabic}\p{Script=Syriac}\p{Script=Nko}\p{Script=Mandaic}\p{Script=Adlam}\p{Script=Mongolian}]/u;
+const graphemes = (str) => (typeof Intl.Segmenter === "function" ? [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(str)].map((g) => g.segment) : [...str]);
+function strongDir(str) {
+  for (const ch of str) { if (RTL_CH.test(ch)) return "rtl"; if (/\p{L}/u.test(ch)) return "ltr"; }
+  return null; // digits, punctuation and emoji take the direction around them
+}
+function buildNote(text) {
+  note.text = text;
+  const box = $("#msg");
+  box.textContent = "";
+  note.letters = [];
+  const para = strongDir(text) || "ltr";
+  box.dir = para; note.dir = para === "rtl" ? -1 : 1;
+  let run = null, space = false;
+  const parts = text.split(/(\s+)/).filter(Boolean), dirs = parts.map((p) => (/^\s+$/.test(p) ? null : strongDir(p)));
+  parts.forEach((part, i) => {
+    if (/^\s+$/.test(part)) { space = true; return; }
+    // Like the bidi algorithm: a word with no letters of its own (digits, emoji) goes with its neighbours
+    // when both sides run the same way, otherwise with the message's direction.
+    const next = dirs.slice(i + 1).find(Boolean) || para;
+    const dir = dirs[i] || (run && run.dir === next ? run.dir : para);
+    if (!run || run.dir !== dir) {
+      if (run && space) box.append(" ");
+      run = document.createElement("span"); run.dir = dir; box.append(run);
+    } else if (space) run.append(" ");
+    space = false;
+    const word = document.createElement("span");
+    word.className = "word"; word.dir = dir;
+    // Inside a word, a stretch in the other direction (digits in Hebrew, "ב-Zoom") gets its own span.
+    let sub = null;
+    for (const ch of JOINING.test(part) ? [part] : graphemes(part)) {
+      const d = strongDir(ch) || (/\p{N}/u.test(ch) ? "ltr" : sub ? sub.dir : dir);
+      if (d === dir) sub = null;
+      else if (!sub || sub.dir !== d) { sub = document.createElement("span"); sub.dir = d; word.append(sub); }
+      const el = document.createElement("span");
+      el.className = "ch"; el.textContent = ch;
+      (sub || word).append(el);
+      note.letters.push({ el, ch, fx: blankFx() });
+    }
+    run.append(word);
+  });
+  note.anim = null; note.gap = 1.2; note.crab.vis = 0;
+  $("#note").hidden = !text;
+  requestAnimationFrame(() => { measureNote(); measure(); });
+}
+function measureNote() {
+  if (!note.letters.length) return; // offsets ignore transforms, so this is safe mid-animation
+  const box = $("#msg").getBoundingClientRect(), { s, ox, oy } = noteFit; // positions as if unscaled (see noteFit)
+  const r = { left: ox + (box.left - ox) / s, top: oy + (box.top - oy) / s };
+  note.fs = parseFloat(getComputedStyle($("#msg")).fontSize) || 24;
+  note.ps = Math.max(2, Math.round(note.fs / 9));
+  for (const L of note.letters) {
+    const e = L.el;
+    L.x = r.left + e.offsetLeft; L.w = e.offsetWidth; L.h = e.offsetHeight;
+    L.top = r.top + e.offsetTop; L.bot = L.top + L.h;
+    L.cx = L.x + L.w / 2; L.cy = L.top + L.h / 2; L.cap = L.top + L.h * 0.16; L.line = Math.round(L.top);
+  }
+  // The crab walks the letters in reading order: lines top to bottom, each line in the message's direction.
+  const band = note.fs * 0.5;
+  note.letters.sort((a, b) => Math.round(a.top / band) - Math.round(b.top / band) || (a.cx - b.cx) * note.dir);
+}
+// Point on top of the text at fractional letter index u (extends past both ends; hops between lines).
+function pathPos(u) {
+  const Ls = note.letters, n = Ls.length, step = note.fs * 0.7;
+  if (u <= 0) return { x: Ls[0].cx + u * step * note.dir, y: Ls[0].cap };
+  if (u >= n - 1) return { x: Ls[n - 1].cx + (u - n + 1) * step * note.dir, y: Ls[n - 1].cap };
+  const i = Math.floor(u), f = u - i, A = Ls[i], B = Ls[i + 1];
+  const hop = A.line === B.line ? 0 : Math.sin(f * Math.PI) * note.fs * 1.3;
+  return { x: A.cx + (B.cx - A.cx) * f, y: A.cap + (B.cap - A.cap) * f - hop };
+}
+function walkCrab(u, t, legSpeed = 10) {
+  const P = pathPos(u);
+  Object.assign(note.crab, { x: P.x, y: P.y - Math.abs(Math.sin(u * Math.PI)) * note.ps * 1.2, pose: "normal", leg: Math.floor(t * legSpeed) % 2, rot: 0, sy: 1, top: false });
+}
+function pickLetter(a, b) {
+  const n = note.letters.length;
+  const pool = note.letters.map((L, i) => i).filter((i) => i >= Math.floor(n * a) && i <= Math.ceil(n * b) - 1 && /[\p{L}\p{N}]/u.test(note.letters[i].ch));
+  return pool.length ? pick(pool) : Math.floor(n / 2);
+}
+function spawnCrumbs(x, y, count) {
+  for (let i = 0; i < count; i++) note.crumbs.push({ x, y, vx: rand(-110, 110), vy: rand(-190, -50), life: rand(0.5, 0.9) });
+}
+
+const NOTE_ANIMS = [
+  { // Parade: marches across the tops, squashing each letter and leaving a wave behind.
+    dur: 6.5,
+    update(p, N, t) {
+      const n = N.letters.length, u = -1.5 + ease(seg(p, 0, 0.95)) * (n + 2);
+      walkCrab(u, t);
+      N.crab.vis = Math.min(seg(p, 0, 0.05), 1 - seg(p, 0.93, 1));
+      N.letters.forEach((L, i) => {
+        const d = u - i, F = L.fx;
+        if (Math.abs(d) < 0.55) Object.assign(F, { dy: N.fs * 0.07, sy: 0.82, sx: 1.12 });
+        else if (d > 0) { const r = Math.sin(d * 1.7) * Math.exp(-d * 0.42); F.dy = -r * N.fs * 0.28; F.rot = r * 8; }
+      });
+    },
+  },
+  { // Bite & hang: bites a letter, swings from it, drops off; the letter springs back.
+    dur: 8,
+    start(N) { N.k = pickLetter(0.3, 0.7); },
+    update(p, N, t) {
+      const k = N.k, L = N.letters[k], c = N.crab, F = L.fx, pull = N.fs * 0.4;
+      if (p < 0.24) { walkCrab(-1.5 + ease(seg(p, 0, 0.24)) * (k + 1.5), t); c.vis = seg(p, 0, 0.04); return; }
+      if (p < 0.33) {
+        walkCrab(k, t); c.leg = 0; c.pose = Math.floor(t * 9) % 2 ? "wave" : "normal";
+        F.rot = Math.sin(t * 60) * 5; F.sy = 0.9;
+        return;
+      }
+      if (p < 0.82) {
+        const s = seg(p, 0.33, 0.82), sw = Math.sin(s * 22) * 0.55 * (1 - s * 0.6), tip = backOut(seg(p, 0.33, 0.4));
+        F.dy = pull * tip; F.rot = (18 + sw * 16) * tip;
+        if (N.letters[k - 1]) N.letters[k - 1].fx.rot = 5 * tip;
+        if (N.letters[k + 1]) N.letters[k + 1].fx.rot = -5 * tip;
+        Object.assign(c, { top: true, x: L.cx, y: L.bot + F.dy - N.fs * 0.12, rot: sw, pose: "wave", leg: Math.floor(t * 6) % 2, sy: 1, vis: 1 });
+        return;
+      }
+      const s = seg(p, 0.82, 1), fallT = (p - 0.82) * this.dur;
+      F.dy = pull * spring(s * 1.4); F.rot = 18 * spring(s * 1.4);
+      Object.assign(c, { top: true, x: L.cx + fallT * 40 * N.dir, y: L.bot - N.fs * 0.12 + 0.5 * 1900 * fallT * fallT, rot: fallT * 7, pose: "normal", vis: 1 - s });
+    },
+  },
+  { // Chomp: eats the message letter by letter, burps, then spits every letter back into place.
+    dur: 8.5,
+    start(N) { N.eaten = 0; },
+    update(p, N, t) {
+      const n = N.letters.length, c = N.crab, last = N.letters[n - 1];
+      if (p < 0.5) {
+        const u = -1.2 + ease(seg(p, 0, 0.5)) * (n + 0.4), near = N.letters[clamp(Math.round(u), 0, n - 1)];
+        Object.assign(c, { x: pathPos(u).x, y: near.bot + N.ps, top: false, rot: 0, sy: 1, leg: Math.floor(t * 10) % 2, pose: Math.floor(t * 8) % 2 ? "wave" : "normal", vis: seg(p, 0, 0.04) });
+        let eaten = 0;
+        N.letters.forEach((L, i) => {
+          const d = u - i, F = L.fx;
+          if (d > 0.15) { F.sx = F.sy = 0; F.op = 0; eaten++; }
+          else if (d > -0.5) { const s = (0.15 - d) / 0.65; F.sx = F.sy = s; F.rot = (1 - s) * -25; }
+        });
+        while (N.eaten < eaten) { N.eaten++; spawnCrumbs(c.x + N.ps * 6 * N.dir, c.y - N.ps * 5, 7); }
+        return;
+      }
+      Object.assign(c, {
+        x: last.cx + N.fs * 0.9 * N.dir, y: last.bot + N.ps, leg: 0, top: false, rot: 0,
+        sy: p < 0.58 ? 1 + Math.sin(seg(p, 0.5, 0.58) * Math.PI) * 0.3 : 1,
+        pose: p > 0.58 && p < 0.93 ? (Math.floor(t * 10) % 2 ? "wave" : "normal") : "normal",
+        vis: 1 - seg(p, 0.95, 1),
+      });
+      N.letters.forEach((L, i) => {
+        // Spat back in place one by one: an English message from the crab's end, a right-to-left one in
+        // reading order (from the right), so it builds the way it reads.
+        const order = N.dir < 0 ? i : n - 1 - i;
+        const s0 = 0.58 + (order / Math.max(1, n)) * 0.32, e = seg(p, s0, s0 + 0.07), F = L.fx;
+        if (e <= 0) { F.sx = F.sy = 0; F.op = 0; return; }
+        const mx = c.x - N.ps * 5 * N.dir, my = c.y - N.ps * 5;
+        Object.assign(F, { dx: (mx - L.cx) * (1 - e), dy: (my - L.bot) * (1 - e) - Math.sin(e * Math.PI) * N.fs * 0.9, rot: (1 - e) * -300, sx: Math.max(0.01, backOut(e)), sy: Math.max(0.01, backOut(e)) });
+      });
+    },
+  },
+  { // Decode: the text scrambles into glyphs and resolves behind the scuttling crab.
+    dur: 6,
+    update(p, N, t) {
+      const n = N.letters.length, u = -1.5 + seg(p, 0, 0.85) * (n + 2.5);
+      walkCrab(u, t, 14);
+      N.crab.vis = Math.min(seg(p, 0, 0.05), 1 - seg(p, 0.92, 1));
+      N.letters.forEach((L, i) => {
+        const d = u - i, F = L.fx;
+        if (d < 0) {
+          if (!L.scr || Math.random() < 0.2) L.scr = SCRAMBLE[Math.floor(Math.random() * SCRAMBLE.length)];
+          Object.assign(F, { glyph: L.scr, color: "var(--accent)", op: 0.85 });
+        } else if (d < 1.2) { F.sy = 1 + (1.2 - d) * 0.25; F.dy = -(1.2 - d) * N.fs * 0.12; }
+      });
+    },
+  },
+  { // Kick: punts three letters into spinning flips that land with a squash.
+    dur: 7,
+    start(N) { N.ks = [...new Set([0, 1, 2].map((a) => pickLetter(a / 3, (a + 1) / 3)))].sort((a, b) => a - b); },
+    update(p, N, t) {
+      const c = N.crab, per = 0.9 / N.ks.length;
+      let prev = -1.5, placed = false;
+      N.ks.forEach((k, j) => {
+        const s0 = j * per, walkEnd = s0 + per * 0.5, target = k - 0.75;
+        if (!placed && p < walkEnd) { walkCrab(prev + ease(seg(p, s0, walkEnd)) * (target - prev), t); placed = true; }
+        else if (!placed && p < s0 + per) { walkCrab(target, t); c.leg = 0; c.pose = "wave"; placed = true; }
+        const e = seg(p, walkEnd, walkEnd + per * 0.9), F = N.letters[k].fx;
+        if (e > 0 && e < 1) Object.assign(F, { dy: -Math.sin(e * Math.PI) * N.fs * 2.4, dx: Math.sin(e * Math.PI * 2) * N.fs * 0.2, rot: e * 720 });
+        const q = seg(p, walkEnd + per * 0.9, walkEnd + per * 1.05);
+        if (q > 0 && q < 1) { F.sy = 1 - 0.35 * Math.sin(q * Math.PI); F.sx = 1 + 0.2 * Math.sin(q * Math.PI); }
+        prev = target;
+      });
+      if (!placed) walkCrab(prev + ease(seg(p, 0.9, 1)) * 4, t);
+      c.vis = Math.min(seg(p, 0, 0.04), 1 - seg(p, 0.95, 1));
+    },
+  },
+  { // Weightlifting: pops up under the message, hoists the middle, drops it, wobbles off dizzy.
+    dur: 6.5,
+    update(p, N, t) {
+      const n = N.letters.length, c = N.crab, mid = (n - 1) / 2, Lm = N.letters[Math.round(mid)];
+      const sigma = Math.max(2, n / 4), lift = p < 0.15 ? 0 : p < 0.7 ? backOut(seg(p, 0.15, 0.3)) : 0, drop = seg(p, 0.7, 1);
+      N.letters.forEach((L, i) => {
+        const w = Math.exp(-((i - mid) ** 2) / (2 * sigma * sigma)), F = L.fx;
+        if (p < 0.7) { F.dy = -N.fs * 0.55 * lift * w + (lift ? rand(-1, 1) : 0); F.rot = lift * w * Math.sin(t * 30 + i) * 2.5; }
+        else F.dy = -N.fs * 0.55 * w * spring(drop * 1.6);
+      });
+      const rise = 1 - ease(seg(p, 0, 0.15)), squash = Math.max(0, Math.sin(seg(p, 0.7, 0.8) * Math.PI));
+      Object.assign(c, {
+        top: false, pose: p < 0.8 ? "wave" : "normal", leg: p > 0.85 ? Math.floor(t * 10) % 2 : 0,
+        x: Lm.cx + (lift ? rand(-1, 1) * N.ps * 0.6 : 0) + seg(p, 0.85, 1) * N.fs * 3 * N.dir,
+        y: Lm.bot + 9 * N.ps + rise * N.fs * 1.6 - N.fs * 0.55 * lift,
+        sy: (lift ? 0.94 : 1) - 0.45 * squash,
+        rot: Math.sin(t * 8) * 0.3 * seg(p, 0.78, 0.85) * (1 - seg(p, 0.9, 1)),
+        vis: Math.min(seg(p, 0, 0.08), 1 - seg(p, 0.9, 1)),
+      });
+    },
+  },
+];
+
+function stepNote(t, dt) {
+  fxg.clearRect(0, 0, W, H);
+  const N = note;
+  if (!N.letters.length || REDUCED || $("#note").hidden) return;
+  for (const L of N.letters) L.fx = blankFx();
+  if (!N.anim) {
+    N.crab.vis = 0;
+    N.gap -= dt;
+    if (N.gap <= 0) {
+      measureNote();
+      let i;
+      do i = Math.floor(Math.random() * NOTE_ANIMS.length); while (i === N.lastIdx && NOTE_ANIMS.length > 1);
+      N.lastIdx = i; N.anim = NOTE_ANIMS[i]; N.at = 0;
+      N.anim.start?.(N);
+    }
+  }
+  if (N.anim) {
+    N.at += dt;
+    const p = Math.min(1, N.at / N.anim.dur);
+    N.anim.update(p, N, t, dt);
+    if (p >= 1) { N.anim = null; N.gap = 1.6; N.crab.vis = 0; for (const L of N.letters) L.fx = blankFx(); }
+  }
+  for (const L of N.letters) {
+    const F = L.fx;
+    const tf = F.dx || F.dy || F.rot || F.sx !== 1 || F.sy !== 1
+      ? `translate(${F.dx.toFixed(1)}px,${F.dy.toFixed(1)}px) rotate(${F.rot.toFixed(1)}deg) scale(${F.sx.toFixed(3)},${F.sy.toFixed(3)})` : "";
+    if (tf !== L.tf) { L.el.style.transform = tf; L.tf = tf; }
+    const op = F.op === 1 ? "" : F.op.toFixed(2);
+    if (op !== L.op) { L.el.style.opacity = op; L.op = op; }
+    const glyph = F.glyph || L.ch;
+    if (L.el.textContent !== glyph) {
+      L.el.textContent = glyph;
+      L.el.style.width = F.glyph ? `${L.w}px` : ""; // scrambled glyphs keep the real letter's width
+    }
+    const col = F.color || "";
+    if (col !== L.col) { L.el.style.color = col; L.col = col; }
+  }
+  const pal = PAL[config.theme], c = N.crab, ps = N.ps;
+  fxg.save();
+  if (noteFit.s !== 1) { fxg.translate(noteFit.ox, noteFit.oy); fxg.scale(noteFit.s, noteFit.s); fxg.translate(-noteFit.ox, -noteFit.oy); }
+  fxg.fillStyle = pal.accent;
+  N.crumbs = N.crumbs.filter((k) => (k.life -= dt) > 0);
+  for (const k of N.crumbs) {
+    k.vy += 700 * dt; k.x += k.vx * dt; k.y += k.vy * dt;
+    fxg.globalAlpha = Math.min(1, k.life * 2); fxg.fillRect(k.x, k.y, ps, ps);
+  }
+  fxg.globalAlpha = 1;
+  if (c.vis > 0.01) {
+    fxg.save(); fxg.globalAlpha = c.vis; fxg.translate(c.x, c.y); fxg.rotate(c.rot); fxg.scale(1, c.sy);
+    drawCrab(fxg, 0, c.top ? 9 * ps : 0, ps, c.pose, c.leg, pal.crab, pal.eye, false);
+    fxg.restore();
+  }
+  fxg.restore();
+}
+
+/* ---------- boot ---------- */
+buildPicker();
+setTheme(config.theme, false);
+if (qs.get("demo")) setDemo(qs.get("demo"));
+if (KIOSK || THUMB) document.body.classList.add("hide-cursor");
+resize();
+addEventListener("resize", resize);
+document.fonts?.ready.then(measure);
+document.fonts?.addEventListener?.("loadingdone", measure);
+poll();
+setInterval(poll, 1000);
+// The screensaver keeps this page alive, hidden, between activations: refresh the moment it shows.
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { last = performance.now(); poll(); } });
+setInterval(() => { verbIdx++; if (current.state === "working") render(); }, 3800);
+setInterval(() => { idleIdx++; if (current.state === "idle") render(); }, 9000);
+const SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
+let spinI = 0;
+setInterval(() => { const s = $("#spin"); if (s) s.textContent = current.state === "working" ? SPIN[spinI++ % SPIN.length] + " " : current.state === "waiting" ? "! " : "> "; }, 90);
+
+let last = performance.now();
+function frame(now) {
+  if (THUMB && now - last < 50) return requestAnimationFrame(frame); // ~20fps is plenty for a thumbnail
+  const dt = clamp((now - last) / 1000, 0, 0.05); last = now; // rAF timestamps can precede `last`
+  const t = now / 1000;
+  const S = { state: current.state, hero: heroParams(t, dt, current.state), crabTarget: L.hx, live: current.live, focus: current.focus };
+  requestAnimationFrame(frame);
+  stepTweens(now);
+  stepCarousel(dt);
+  stepLockUI();
+  for (const sp of spinners) sp.style.transform = `rotate(${(t * 300) % 360}deg)`;
+  try { THEME_IMPL[config.theme].draw(ctx, t, dt, S); } catch (err) { console.error(err); THEME_IMPL[config.theme].init(); }
+  try { stepNote(t, dt); } catch (err) { console.error(err); note.anim = null; }
+}
+requestAnimationFrame(frame);
+setInterval(measure, 2000);
+</script>
+</body>
+</html>
