@@ -2,7 +2,7 @@
 
 **Your agents keep working. Don't tap the glass.**
 
-Agent Fishtank is a lock screen for your Mac that shows what your AI coding agents are doing while you're away. Your Mac stays locked, your agents keep going, and everyone walking past can see the work happening.
+Agent Fishtank is a lock screen for your Mac that shows what your AI coding agents are doing while you're away. Your Mac stays locked, your agents keep going, and everyone walking past can see that you are in fact working rather than assuming you took the 7th coffee break today.
 
 **Website:** [agentfishtank.danamsalem.com](https://agentfishtank.danamsalem.com)
 
