@@ -24,7 +24,7 @@ main, header, footer { position: relative; z-index: 1; }
 /* nav */
 .nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
 .logo { display: flex; align-items: center; gap: 10px; color: var(--fg); text-decoration: none; font-weight: 700; letter-spacing: -.01em; }
-.logo svg { width: 30px; height: 30px; }
+.logo img { width: 30px; height: 30px; }
 .nav nav { display: flex; gap: 20px; font-size: 15px; }
 .nav nav a { color: var(--muted); text-decoration: none; }
 .nav nav a:hover { color: var(--fg); }
