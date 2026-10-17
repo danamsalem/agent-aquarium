@@ -8,12 +8,12 @@
 
 A lock screen for your Mac that shows what your AI coding agents are doing while you're away.
 
-[![Latest release](https://img.shields.io/github/v/release/danamsalem/agent-aquarium?label=free%20beta&color=2f9bd8)](https://github.com/danamsalem/agent-aquarium/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/danamsalem/agent-aquarium?label=download&color=2f9bd8)](https://github.com/danamsalem/agent-aquarium/releases/latest)
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-555)
 ![Apple silicon](https://img.shields.io/badge/Apple%20silicon-M1%2B-555)
 ![Works with Claude Code](https://img.shields.io/badge/works%20with-Claude%20Code-d97757)
 
-**[Download the free beta](https://github.com/danamsalem/agent-aquarium/releases/latest)** · [Website](https://agentaquarium.danamsalem.com) · [Roadmap](https://github.com/danamsalem/agent-aquarium/issues/9) · [Report a bug](https://github.com/danamsalem/agent-aquarium/issues/new/choose)
+**[Download for free](https://github.com/danamsalem/agent-aquarium/releases/latest)** · [Website](https://agentaquarium.danamsalem.com) · [Roadmap](https://github.com/danamsalem/agent-aquarium/issues/9) · [Report a bug](https://github.com/danamsalem/agent-aquarium/issues/new/choose)
 
 <br>
 
@@ -70,7 +70,7 @@ Try them all live on the [website](https://agentaquarium.danamsalem.com).
 
 1. Download the zip from the **[latest release](https://github.com/danamsalem/agent-aquarium/releases/latest)** and double-click it to unzip.
 2. Drag **Agent Aquarium** into your **Applications** folder.
-3. Open it. The beta isn't notarized by Apple yet, so macOS blocks it the first time (see below).
+3. Open it. The app isn't notarized by Apple yet, so macOS blocks it the first time (see below).
 4. Click **Connect Claude Code** when asked. The app adds a hook to `~/.claude/settings.json` (a backup is saved first). Restart any Claude Code sessions that are already open.
 5. Choose **Agent Aquarium** in **System Settings → Screen Saver** (under Other). To keep your Mac locked while it shows, set Lock Screen → "Require password after screen saver begins" to **Immediately**.
 
@@ -79,7 +79,7 @@ Try them all live on the [website](https://agentaquarium.danamsalem.com).
 
 <br>
 
-That's expected while the beta isn't notarized:
+That's expected while the app isn't notarized by Apple:
 
 1. Click **Done** (not Move to Trash).
 2. Open **System Settings → Privacy & Security**, scroll down to the message about "Agent Aquarium" and click **Open Anyway**, then enter your password.
@@ -149,7 +149,7 @@ Agent Aquarium menu → **Uninstall Agent Aquarium…** removes the Claude Code 
 
 <br>
 
-Yes, the beta is free.
+Yes, it's free.
 </details>
 
 ## Roadmap
