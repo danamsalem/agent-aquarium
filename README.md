@@ -14,7 +14,7 @@ Agent Aquarium is a lock screen for your Mac that shows what your AI coding agen
 - **Your calendar.** Shows the meeting you're in and what's next, from Google, Apple or Outlook.
 - **Needs-you alerts.** The screen glows when an agent is waiting for your approval.
 - **Plan usage.** See how much of your Claude plan's 5-hour and weekly limits you've used (updated when you use `claude` in a terminal).
-- **Four themes.** Warm, Retro pixel, Cosmic, and Aquarium, where every session is a little robot fish.
+- **Four themes.** Aquarium, where every session is a little robot fish, plus Warm, Retro pixel, and Cosmic, with an astronaut crab on a jetpack.
 - **Always-on display.** Show the scene full screen on a second monitor all the time.
 - **Battery estimate.** See what the lock screen costs your battery, per theme.
 - **Local and private.** Everything runs on your Mac. No account, no tracking.
