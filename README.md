@@ -164,6 +164,10 @@ Found a bug or have an idea? [Open an issue](https://github.com/danamsalem/agent
 
 Everything stays on your Mac. Read the [privacy policy](https://agentaquarium.danamsalem.com/privacy).
 
+## License
+
+Free to download and use; no redistribution or modification. See [LICENSE](LICENSE) and the [terms of use](https://agentaquarium.danamsalem.com/terms).
+
 ---
 
 <div align="center">

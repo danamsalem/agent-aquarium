@@ -1,0 +1,27 @@
+Agent Aquarium
+Copyright (c) 2026 Dan Amsalem. All rights reserved.
+
+You may download Agent Aquarium and use it free of charge on computers you own
+or control.
+
+You may not redistribute, sell, rent or sublicense it, or modify, decompile,
+reverse engineer or create derivative works of it, except where applicable law
+allows this regardless of this limitation. To share it, link to
+https://agentaquarium.danamsalem.com or this repository's releases page.
+
+Agent Aquarium adds hooks and, if you turn on plan usage, a status line to
+Claude Code's settings (~/.claude/settings.json). It saves a backup of that
+file first and removes its changes when you uninstall it from the app.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Agent Aquarium includes Node.js, which is licensed separately under its own
+license; the full notice ships inside the app at
+Contents/Resources/Acknowledgements.txt.
+
+Full terms of use: https://agentaquarium.danamsalem.com/terms
