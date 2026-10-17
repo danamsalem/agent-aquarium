@@ -33,9 +33,10 @@
     <h2 class="tagline">Your agents keep working. <em>Don't tap the glass.</em></h2>
     <p>Agent Aquarium is a lock screen for your Mac that shows what your AI coding agents are doing while you're away. Your Mac stays locked, your agents keep going, and everyone walking past can see the work happening.</p>
     <div class="cta">
-      <a class="btn primary" href="https://github.com/danamsalem/agent-aquarium">Follow on GitHub</a>
+      <a class="btn primary" href="https://github.com/danamsalem/agent-aquarium/releases/latest">Download on GitHub</a>
       <a class="btn" href="#features">See what it does</a>
     </div>
+    <p class="ask">Like it? <a href="https://github.com/danamsalem/agent-aquarium">Star it on GitHub</a> and <button type="button" class="link" id="share">share it</button> with a friend who codes with agents.</p>
 
     <figure class="tank">
       <div class="screen" id="screen">
@@ -129,6 +130,17 @@
     });
   }
   pick(document.getElementById("themes"), "theme", "setTheme");
+  // Share: the system share sheet where there is one (phones, Safari), otherwise copy the link.
+  const share = document.getElementById("share");
+  share.addEventListener("click", async () => {
+    const data = { title: "Agent Aquarium", text: "A Mac lock screen that shows what your AI coding agents are doing while you're away.", url: "https://agentaquarium.danamsalem.com" };
+    try {
+      if (navigator.share) return await navigator.share(data);
+      await navigator.clipboard.writeText(data.url);
+      share.textContent = "link copied";
+      setTimeout(() => (share.textContent = "share it"), 2000);
+    } catch {}
+  });
   pick(document.getElementById("states"), "demo", "setDemo");
 
   // A few slow bubbles; skipped when the visitor prefers reduced motion (the CSS hides them too).
