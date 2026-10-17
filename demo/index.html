@@ -444,6 +444,7 @@ let config = {
   showDetails: store.get("cl.details") !== "0",
   calTitles: true,
   showUsage: false, // off until you turn it on
+  powerSaver: true,
 };
 if (!ALL_THEMES.includes(config.theme)) config.theme = ALL_THEMES[0];
 const themeFromUrl = qs.has("theme");
@@ -808,11 +809,20 @@ function fitSessions() {
     if (!hits(more)) return;
   }
 }
-function resize() {
-  const dpr = THUMB ? 1 : Math.min(window.devicePixelRatio || 1, 2);
-  W = innerWidth; H = innerHeight;
+// Power saver: on battery (and on in settings, the default) the scene draws at 30 fps on 1x canvases.
+let onBattery = false;
+const saving = () => onBattery && config.powerSaver !== false && !THUMB;
+let canvasDpr = 0;
+function sizeCanvases() {
+  const dpr = THUMB || saving() ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+  if (dpr === canvasDpr && cv.width === Math.round(W * dpr) && cv.height === Math.round(H * dpr)) return;
+  canvasDpr = dpr;
   cv.width = fx.width = Math.round(W * dpr); cv.height = fx.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); fxg.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function resize() {
+  W = innerWidth; H = innerHeight;
+  sizeCanvases();
   measure();
   THEME_IMPL[config.theme].init();
 }
@@ -1578,7 +1588,10 @@ async function poll() {
       if (typeof c.showDetails === "boolean") { config.showDetails = c.showDetails; $("#details").checked = c.showDetails; }
       if (typeof c.calTitles === "boolean") config.calTitles = c.calTitles;
       if (typeof c.showUsage === "boolean") config.showUsage = c.showUsage;
+      config.powerSaver = c.powerSaver !== false;
     }
+    onBattery = !!(j.battery && j.battery.onBattery);
+    sizeCanvases();
   } catch { online = false; calendar = { events: [], feeds: [] }; usage = null; }
   if (!online) setThemes(THEMES); // offline: only the public themes
   render();
@@ -1951,6 +1964,7 @@ setInterval(() => { const s = $("#spin"); if (s) s.textContent = current.state =
 let last = performance.now();
 function frame(now) {
   if (THUMB && now - last < 50) return requestAnimationFrame(frame); // ~20fps is plenty for a thumbnail
+  if (saving() && now - last < 1000 / 30 - 2) return requestAnimationFrame(frame); // power saver: 30fps
   const dt = clamp((now - last) / 1000, 0, 0.05); last = now; // rAF timestamps can precede `last`
   const t = now / 1000;
   const S = { state: current.state, hero: heroParams(t, dt, current.state), crabTarget: L.hx, live: current.live, focus: current.focus };
