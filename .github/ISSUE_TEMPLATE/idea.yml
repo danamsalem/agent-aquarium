@@ -1,0 +1,18 @@
+name: Idea or feature request
+description: Something you'd like Agent Aquarium to do.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: Check the [roadmap](https://github.com/danamsalem/agent-aquarium/issues/9) first; if your idea is there, a 👍 on its issue is the best vote.
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What would it help you with?
+      description: The situation where you'd use it.

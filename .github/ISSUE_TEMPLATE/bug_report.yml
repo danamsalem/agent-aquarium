@@ -1,0 +1,67 @@
+name: Bug report
+description: Something doesn't work or looks wrong.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for helping make Agent Aquarium better. A screenshot or short screen recording helps a lot.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can we see it too?
+      description: The steps that lead to it, if you know them.
+      placeholder: |
+        1. Start a Claude Code session
+        2. Lock the Mac
+        3. …
+  - type: input
+    id: app-version
+    attributes:
+      label: Agent Aquarium version
+      description: In Finder, right-click Agent Aquarium in Applications → Get Info.
+      placeholder: "0.10.4"
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      description: Apple menu → About This Mac.
+      placeholder: "macOS 15.5"
+    validations:
+      required: true
+  - type: dropdown
+    id: theme
+    attributes:
+      label: Theme
+      options:
+        - Aquarium
+        - Warm
+        - Retro pixel
+        - Cosmic
+        - Not theme-related
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where does it happen?
+      multiple: true
+      options:
+        - Lock screen / screensaver
+        - Settings window
+        - Menu bar
+        - Always-on display
+        - Calendar or Google sign-in
+        - Installing or first launch
+        - Other
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, screen recordings, other agents or tools you use.

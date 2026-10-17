@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Roadmap
+    url: https://github.com/danamsalem/agent-aquarium/issues/9
+    about: See what's planned and 👍 the ideas you want most.
+  - name: Privacy policy
+    url: https://agentaquarium.danamsalem.com/privacy
+    about: What the app stores and where (everything stays on your Mac).
