@@ -57,6 +57,7 @@ a.badge:hover { color: var(--fg); }
 .hero .tagline em { font-style: normal; color: var(--accent); }
 .hero p { margin: 20px auto 0; max-width: 58ch; color: var(--muted); font-size: clamp(17px, 2vw, 20px); text-wrap: pretty; }
 .cta { margin-top: 30px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero .req { margin-top: 12px; color: var(--muted); font-size: 13px; }
 .hero .ask { margin-top: 14px; color: var(--muted); font-size: 14px; }
 .hero .ask a, .hero .ask .link { color: var(--fg); font-weight: 600; }
 .link { padding: 0; border: 0; background: none; font: inherit; text-decoration: underline; cursor: pointer; }
