@@ -50,7 +50,7 @@ Agent Aquarium runs as your screensaver, so your Mac stays locked and asks for y
 | **Menu bar fish** | A little fish shows at a glance whether your agents are working or need you. Click it to set your message, switch theme or start the screensaver. |
 | **Keep your Mac awake** | Optional: your Mac won't fall asleep in the middle of a long run. The screen still turns off and locks as usual. |
 | **Always-on display** | Show the scene full screen on a second monitor all the time. |
-| **Battery estimate** | See what the lock screen costs your battery, per theme. |
+| **Saves battery** | On battery, the lock screen draws a little lighter, so it uses less of your charge. You can switch it off in settings. |
 | **Local and private** | Everything runs on your Mac. No account, no tracking, no servers of ours. |
 
 ## Themes
