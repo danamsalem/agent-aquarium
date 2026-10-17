@@ -16,12 +16,14 @@ Agent Aquarium is a lock screen for your Mac that shows what your AI coding agen
 - **Plan usage.** See how much of your Claude plan's 5-hour and weekly limits you've used (updated when you use `claude` in a terminal).
 - **Four themes.** Aquarium, where every session is a little robot fish, plus Warm, Retro pixel, and Cosmic, with an astronaut crab on a jetpack.
 - **Always-on display.** Show the scene full screen on a second monitor all the time.
+- **Menu bar.** A little fish shows at a glance whether your agents are working or need you, with quick actions for your message, theme and screensaver.
+- **Keeps your Mac awake.** Optional: your Mac won't fall asleep while an agent is working. The screen still locks as usual.
 - **Battery estimate.** See what the lock screen costs your battery, per theme.
 - **Local and private.** Everything runs on your Mac. No account, no tracking.
 
 ## Download
 
-**[Download the free beta (0.10.3)](https://github.com/danamsalem/agent-aquarium/releases/latest)** for Macs with Apple silicon (M1 or later), macOS 13 or later, with Claude Code.
+**[Download the free beta (0.10.4)](https://github.com/danamsalem/agent-aquarium/releases/latest)** for Macs with Apple silicon (M1 or later), macOS 13 or later, with Claude Code.
 
 The beta isn't notarized by Apple yet, so macOS asks you to allow it the first time you open it. The release notes walk you through it. Like it? Star this repo and share it with a friend who codes with agents. Starring or watching it also tells you about new versions.
 
