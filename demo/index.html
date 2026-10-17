@@ -360,7 +360,9 @@ const $ = (s) => document.querySelector(s);
 const qs = new URLSearchParams(location.search);
 const SCREENSAVER = qs.has("screensaver");
 // The app's always-on display mode: the scene full screen on a display, all the time. No controls there either.
-const KIOSK = SCREENSAVER || qs.has("display");
+// "preview" is the app's Preview lock screen window: the same scene in an ordinary window, cursor kept.
+const PREVIEW = qs.has("preview");
+const KIOSK = SCREENSAVER || qs.has("display") || PREVIEW;
 // Called by the screensaver: true while macOS shows its lock screen (with its own clock) on top of us.
 // Our clock fades out and the calendar card glides up into its place, then both reverse. It's all
 // transforms, so nothing else on the page moves. Progress is computed from elapsed time, and is
@@ -1816,7 +1818,7 @@ function stepNote(t, dt) {
 buildPicker();
 setTheme(config.theme, false);
 if (qs.get("demo")) setDemo(qs.get("demo"));
-if (KIOSK || THUMB) document.body.classList.add("hide-cursor");
+if ((KIOSK && !PREVIEW) || THUMB) document.body.classList.add("hide-cursor");
 resize();
 addEventListener("resize", resize);
 document.fonts?.ready.then(measure);
@@ -1847,6 +1849,62 @@ function frame(now) {
 }
 requestAnimationFrame(frame);
 setInterval(measure, 2000);
+/* ---------- preview: macOS's lock UI on hover ---------- */
+// In the app's Lock Screen Preview, pointing at the scene works like touching a locked Mac: macOS draws its clock,
+// your picture, name and password field over the screensaver (drawn here like the website demo does), and the page
+// makes room exactly as on the real lock screen. They go 29.4 s after the last input, or when the pointer leaves,
+// so both looks can be checked: the screensaver alone, and with macOS's sign-in on top.
+if (PREVIEW) {
+  const css = document.createElement("style");
+  css.textContent = `
+    .pv-mac { position: fixed; inset: 0; z-index: 50; pointer-events: none; color: #fff; text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; text-shadow: 0 1px 12px rgba(0, 0, 0, .25);
+      opacity: 0; transition: opacity .45s ease; }
+    .pv-mac.on { opacity: 1; }
+    .pv-mac-clock { position: absolute; left: 0; right: 0; top: 54px; }
+    .pv-mac-date { font-size: 24px; font-weight: 600; opacity: .88; }
+    .pv-mac-time { margin-top: -6px; font-size: 128px; line-height: 1.05; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; opacity: .92; }
+    .pv-mac-login { position: absolute; left: 50%; bottom: 46px; transform: translateX(-50%); display: grid; justify-items: center; gap: 8px; }
+    .pv-mac-pfp { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; background: linear-gradient(180deg, #b8bec7, #8a919c); box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }
+    .pv-mac-pfp svg { width: 100%; height: 100%; fill: #eef0f3; }
+    .pv-mac-name { font-size: 15px; font-weight: 600; }
+    .pv-mac-field { width: 172px; padding: 6px 14px; border-radius: 999px; background: rgba(255, 255, 255, .22); backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px); font-size: 13px; color: rgba(255, 255, 255, .62); text-align: left; text-shadow: none; }
+    .pv-mac-hint { font-size: 12px; opacity: .72; }
+    @media (prefers-reduced-motion: reduce) { .pv-mac { transition: none; } }`;
+  document.head.append(css);
+  const mac = document.createElement("div");
+  mac.className = "pv-mac";
+  mac.setAttribute("aria-hidden", "true");
+  mac.innerHTML = `<div class="pv-mac-clock"><div class="pv-mac-date"></div><div class="pv-mac-time"></div></div>
+    <div class="pv-mac-login"><div class="pv-mac-pfp"><svg viewBox="0 0 64 64"><circle cx="32" cy="25" r="11"/><path d="M12 54c2-11 10-17 20-17s18 6 20 17"/></svg></div>
+    <div class="pv-mac-name"></div><div class="pv-mac-field">Enter Password</div><div class="pv-mac-hint">Touch ID or Enter Password</div></div>`;
+  mac.querySelector(".pv-mac-name").textContent = qs.get("user") || "Your Name";
+  document.body.append(mac);
+
+  const LOCK_UI_TIMEOUT = 29400; // what loginwindow uses (see the screensaver)
+  let lastInput = 0, shown = false;
+  const show = (on) => {
+    if (on === shown) return;
+    shown = on;
+    mac.classList.toggle("on", on);
+    window.setSystemLockUI(on);
+  };
+  const touched = () => { lastInput = Date.now(); show(true); };
+  for (const ev of ["pointerenter", "pointermove", "pointerdown", "keydown", "wheel"]) document.addEventListener(ev, touched, { passive: true });
+  document.documentElement.addEventListener("pointerleave", () => show(false));
+  addEventListener("blur", () => show(false));
+  setInterval(() => { if (shown && Date.now() - lastInput >= LOCK_UI_TIMEOUT) show(false); }, 100);
+  // macOS's lock-screen clock: date above, hours and minutes without AM/PM.
+  const tick = () => {
+    const now = new Date();
+    mac.querySelector(".pv-mac-date").textContent = now.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+    mac.querySelector(".pv-mac-time").textContent = new Intl.DateTimeFormat([], { hour: "numeric", minute: "2-digit" })
+      .formatToParts(now).filter((x) => x.type !== "dayPeriod").map((x) => x.value).join("").trim();
+  };
+  tick();
+  setInterval(tick, 1000);
+}
 </script>
 </body>
 </html>
