@@ -1,0 +1,28 @@
+# Agent Aquarium
+
+> A free macOS screensaver and lock screen that shows what your AI coding agents (Claude Code) are doing while you're away. Your Mac stays locked; the screen shows each session's progress, which one needs you, an away message, your next meeting and your Claude plan usage.
+
+- Website: https://agentaquarium.danamsalem.com
+- Download (GitHub Releases): https://github.com/danamsalem/agent-aquarium/releases/latest
+- Requirements: a Mac with Apple silicon (M1 or later), macOS 13 or later, and Claude Code
+- Price: free. License: free to use, no redistribution or modification (https://agentaquarium.danamsalem.com/terms)
+- Made by Dan Amsalem (https://x.com/dannamsalem), a personal project. Not affiliated with Anthropic, OpenAI or Google.
+
+## Features
+
+- Live agent status for every Claude Code session: working, done or waiting for you, with its task list
+- Needs-you alerts: the screen glows when an agent waits for approval
+- Away message with presets, in any language
+- Calendar: current and next meeting from Google (read-only), Apple or Outlook
+- Claude plan usage: 5-hour and weekly limits (Pro, Max and Team plans)
+- Four themes: Aquarium, Warm, Retro pixel, Cosmic
+- Menu bar fish with quick actions; optional keep-awake while agents work; save battery; always-on display for a second monitor
+- Local and private: runs entirely on the Mac, no account, no tracking
+
+## Pages
+
+- [How to use it](https://agentaquarium.danamsalem.com/docs): install, settings, tips, troubleshooting, uninstall
+- [About](https://agentaquarium.danamsalem.com/about)
+- [Contact](https://agentaquarium.danamsalem.com/contact)
+- [Privacy policy](https://agentaquarium.danamsalem.com/privacy)
+- [Terms of use](https://agentaquarium.danamsalem.com/terms)

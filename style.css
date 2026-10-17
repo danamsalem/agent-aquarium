@@ -29,6 +29,8 @@ header { z-index: 2; } /* its menu opens over the page */
 .nav nav { display: flex; align-items: center; gap: 20px; font-size: 15px; }
 .nav nav a { color: var(--muted); text-decoration: none; }
 .nav nav a:hover { color: var(--fg); }
+.nav .gh { display: grid; place-items: center; width: 22px; height: 22px; }
+.nav .gh svg { width: 20px; height: 20px; }
 
 /* hamburger menu: the site's other pages */
 .menu { position: relative; }
@@ -120,7 +122,7 @@ a.badge:hover { color: var(--fg); }
 .doc h2 { margin-top: 38px; font-size: 21px; letter-spacing: -.01em; }
 .doc p, .doc li { color: #c9dde2; }
 .doc p { margin-top: 12px; }
-.doc ul { margin: 12px 0 0 22px; display: grid; gap: 6px; }
+.doc ul, .doc ol { margin: 12px 0 0 22px; display: grid; gap: 6px; }
 .doc code { font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; padding: 1px 6px; border-radius: 6px; background: rgba(255, 255, 255, .08); color: var(--fg); overflow-wrap: anywhere; }
 .doc strong { color: var(--fg); }
 
