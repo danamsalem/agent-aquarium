@@ -27,7 +27,7 @@
 <main class="wrap page">
   <article class="doc">
     <h1>Privacy Policy</h1>
-    <p class="updated">Effective October 16, 2026</p>
+    <p class="updated">Effective October 17, 2026</p>
 
     <div class="summary">
       <strong>The short version</strong>
@@ -46,14 +46,14 @@
     <ul>
       <li><strong>Agent activity.</strong> Status updates from your coding agents' hooks: session state (working, waiting, done), a short description of the current step, the project folder name and the agent's task list. Each session's record is deleted when the session ends, or after 24 hours.</li>
       <li><strong>Your settings.</strong> Your theme, your custom message, your saved message presets and your display options.</li>
-      <li><strong>Claude plan usage.</strong> If you turn on plan usage, the app sets a status line command in Claude Code's settings (~/.claude/settings.json) that reads the usage figures Claude Code already shows there: how much of your 5-hour and weekly limits you've used, and when they reset. It saves only those figures, then runs your own status line unchanged. Turning plan usage off, or uninstalling, puts your previous status line back.</li>
+      <li><strong>Claude plan usage.</strong> If you turn on plan usage, the app sets a status line command in Claude Code's settings that reads the usage figures Claude Code already shows there: how much of your 5-hour and weekly limits you've used, and when they reset. It saves only those figures, then runs your own status line unchanged. Turning plan usage off, or uninstalling, puts your previous status line back.</li>
       <li><strong>Battery measurements.</strong> While your Mac runs on battery, the app reads its power draw from macOS every few seconds and keeps up to 14 days of these readings, labeled with whether the lock screen was showing and in which theme, to estimate what the lock screen costs your battery.</li>
       <li><strong>Calendar links.</strong> Any iCal (.ics) address you add for Apple, Outlook or other calendars. These links are stored in a settings file that only your macOS user account can read, and are never shown on the lock screen.</li>
       <li><strong>Google sign-in.</strong> If you sign in with Google, the access and refresh tokens Google issues, your Google account's email address, and the names of your calendars with which ones you chose to show are stored in a file that only your macOS user account can read.</li>
     </ul>
 
     <h2>Google user data</h2>
-    <p>If you choose <em>Sign in with Google</em>, the app asks for one permission: <code>https://www.googleapis.com/auth/calendar.readonly</code> (view your calendars). With it, the app reads:</p>
+    <p>If you choose <em>Sign in with Google</em>, the app asks for two read-only permissions: <code>https://www.googleapis.com/auth/calendar.calendarlist.readonly</code> (see the list of calendars you're subscribed to) and <code>https://www.googleapis.com/auth/calendar.events.readonly</code> (view events on your calendars). Versions before 0.10.2 asked for the broader <code>https://www.googleapis.com/auth/calendar.readonly</code> instead; signing in again switches to the two narrower permissions. With them, the app reads:</p>
     <ul>
       <li>your list of calendars, so you can choose which ones to show, and the address of your primary calendar, so the app can show which account is connected;</li>
       <li>events from the calendars you select, for a short window from one day ago to three days ahead: the title, start and end time, status, whether the event is marked busy or free, the event type, and your own response (so declined meetings are hidden).</li>
@@ -68,12 +68,12 @@
     <ul>
       <li>Google's sign-in and Calendar services, if you sign in with Google;</li>
       <li>the calendar addresses you add yourself;</li>
-      <li>Google Fonts, to load the typefaces some themes use. Like any website request, this shares your IP address with Google; see <a href="https://developers.google.com/fonts/faq/privacy">Google Fonts privacy</a>.</li>
+      <li>Google Fonts, to load the typefaces some themes and the Sign in with Google button use. Like any website request, this shares your IP address with Google; see <a href="https://developers.google.com/fonts/faq/privacy">Google Fonts privacy</a>.</li>
     </ul>
     <p>The status display runs on a local server that only accepts connections from your own Mac.</p>
 
     <h2>Deleting your data</h2>
-    <p>Sign out of Google and remove calendar links in the app's settings. Uninstalling the app removes its background service and screensaver; to remove everything it stored, also delete the app's data folder in your user folder (<code>~/.claude/lockscreen</code> in the current beta).</p>
+    <p>Sign out of Google and remove calendar links in the app's settings. To uninstall, choose <em>Uninstall Agent Aquarium…</em> in the app's menu: it removes the Claude Code hooks, the background service and the screensaver. If you also tick <em>Also delete my settings, presets and Google sign-in</em>, it revokes the app's Google access and deletes everything the app stored on your Mac.</p>
 
     <h2>Children</h2>
     <p>The app is a developer tool and isn't directed at children under 13.</p>
