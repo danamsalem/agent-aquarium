@@ -12,6 +12,7 @@ A lock screen for your Mac that shows what your AI coding agents are doing while
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-555)
 ![Apple silicon](https://img.shields.io/badge/Apple%20silicon-M1%2B-555)
 ![Works with Claude Code](https://img.shields.io/badge/works%20with-Claude%20Code-d97757)
+[![Follow @dannamsalem on X](https://img.shields.io/badge/follow-%40dannamsalem-000000?logo=x&logoColor=white)](https://x.com/dannamsalem)
 
 **[Download for free](https://github.com/danamsalem/agent-aquarium/releases/latest)** · [Website](https://agentaquarium.danamsalem.com) · [Roadmap](https://github.com/danamsalem/agent-aquarium/issues/9) · [Report a bug](https://github.com/danamsalem/agent-aquarium/issues/new/choose) · [X](https://x.com/dannamsalem)
 
