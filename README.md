@@ -99,7 +99,7 @@ xattr -dr com.apple.quarantine "/Applications/Agent Aquarium.app"
 
 - **Start it any time:** set a Hot Corner to "Start Screen Saver" in System Settings → Desktop & Dock → Hot Corners.
 - **Set your message on the way out:** click the fish in the menu bar and pick a preset.
-- **Second monitor:** Agent Aquarium menu → **Always-On Display**. Press Esc to close it.
+- **Second monitor:** Settings → Lock screen → **Always-on display** (or the fish in the menu bar). Press Esc to close it.
 - **Plan usage** updates when you use `claude` in a terminal (not in the Claude desktop app). The app asks before turning it on, and your own status line keeps working exactly as before.
 
 ## FAQ
