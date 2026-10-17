@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="warm">
+<html lang="en" data-theme="aquarium" class="fonts-wait">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -60,7 +60,10 @@ canvas#bg { position: fixed; inset: 0; width: 100%; height: 100%; display: block
 canvas#sky { position: fixed; inset: 0; width: 100%; height: 100%; display: none; }
 :root[data-theme="cosmic"] canvas#sky { display: block; }
 
+/* Text waits for the theme's web fonts (see boot), so the layout, and which session cards fit, doesn't jump. */
+:root.fonts-wait #ui { opacity: 0; }
 #ui {
+  transition: opacity .25s ease;
   position: fixed; inset: 0; z-index: 1; display: grid; grid-template-rows: auto 1fr;
   padding: clamp(16px, 3vw, 40px) clamp(16px, 4vw, 56px);
   padding-bottom: var(--lane); /* the crab's walking lane */
@@ -421,8 +424,8 @@ function fitNoteToLockUI(p) {
   el.style.transform = noteFit.s === 1 ? "" : `scale(${noteFit.s.toFixed(4)})`;
 }
 const THUMB = qs.has("thumb"); // tiny live preview inside the settings window: cheaper rendering, no controls
-const ALL_THEMES = ["warm", "pixel", "cosmic", "aquarium"];
-let THEMES = ["warm", "pixel", "cosmic", "aquarium"]; // the server sends the list it offers
+const ALL_THEMES = ["aquarium", "warm", "pixel", "cosmic"]; // the first is the default
+let THEMES = ALL_THEMES.slice(); // the server sends the list it offers
 const THEME_NAMES = { warm: "Warm", pixel: "Retro pixel", cosmic: "Cosmic", aquarium: "Aquarium" };
 
 const store = {
@@ -437,13 +440,13 @@ const STATE_LABEL = { working: "Working", thinking: "Thinking", waiting: "Needs 
 
 /* ---------- state ---------- */
 let config = {
-  theme: qs.get("theme") || store.get("cl.theme") || "warm",
+  theme: qs.get("theme") || store.get("cl.theme") || ALL_THEMES[0],
   customText: qs.get("text") ?? store.get("cl.text") ?? "",
   showDetails: store.get("cl.details") !== "0",
   calTitles: true,
   showUsage: false, // off until you turn it on
 };
-if (!ALL_THEMES.includes(config.theme)) config.theme = "warm";
+if (!ALL_THEMES.includes(config.theme)) config.theme = ALL_THEMES[0];
 const themeFromUrl = qs.has("theme");
 let sessions = [];
 let calendar = { events: [], feeds: [] };
@@ -547,7 +550,7 @@ function drawCrab(g, cx, by, ps, pose, leg, body, eye, blink) {
 }
 
 /* ---------- shared crab behaviour ---------- */
-const walker = { x: -1, dir: 1, t: 0, duck: 0, step: 0 };
+const walker = { x: -1, dir: 1, t: 0, duck: 0, step: 0, fly: 0, plan: null }; // fly/plan: the astronaut's jetpack (drawGroundCrab)
 // sneaking: crouched under macOS's password field (see drawGroundCrab).
 function stepWalker(dt, state, ps, w, targetX, sneaking = false) {
   const k = walker; k.t += dt;
@@ -620,28 +623,124 @@ function bubble(g, x, y, ps, fill, ink, ch, font, round = true) {
   g.fillStyle = ink; g.font = `700 ${Math.max(5, Math.round(ps * 3.4))}px ${font}`;
   g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(ch, x, y + ps * 0.3); g.textBaseline = "alphabetic";
 }
+// Cosmic's walking crab is an astronaut, in pixel art on the crab's own 16-wide grid: a round glass helmet (rim, tint,
+// shine, a glint on the face) whose back half sits behind the crab, so its claws poke out through the sides, a collar ring with rivets in
+// front, and an antenna whose light blinks in the status color. Rows start `from` rows above the shell's top row.
+// Sneaking under macOS's password field it wears a flat one, only a row taller than the crab, without the antenna.
+const HELMET = {
+  tall: { from: -5, rows: [
+    "..........L.....",
+    "..........A.....",
+    ".....OOOOOO.....",
+    "...OOWWGGGGOO...",
+    "..OGWGGGGGGGGO..",
+    "..OGGGGGGGGGGO..",
+    "..OGGGGGGGGGgO..",
+    "..OGGGGGGGGGgO..",
+    "..OGGGGGGGGGGO..",
+    "..OGGGGGGGGGGO..",
+    "..SsSSSSSSSSsS..",
+  ] },
+  flat: { from: -1, rows: [
+    "....OOOOOOOO....",
+    "...OWGGGGGGGO...",
+    "..OGGGGGGGGGgO..",
+    "..SsSSSSSSSSsS..",
+  ] },
+};
+const HELMET_INK = { O: "rgba(226,234,250,.95)", G: "rgba(185,205,255,.3)", W: "#ffffff", g: "rgba(255,255,255,.38)", A: "#9aa6bd", S: "#c7d0e2", s: "#7f8aa3" };
+const HELMET_BACK = "OGAL"; // drawn before the crab; the rest after it
+function drawHelmet(g, ps, pose, front, light, t) {
+  const h = pose.startsWith("sneak") ? HELMET.flat : HELMET.tall;
+  const x0 = Math.round(-8 * ps), y0 = Math.round(-crabRows(pose) * ps);
+  const lit = Math.sin(t * (light.fast ? 9 : 3.2)) > -0.2; // the antenna light blinks, faster when you're needed
+  for (let r = 0; r < h.rows.length; r++) {
+    for (let c = 0; c < 16; c++) {
+      const ch = h.rows[r][c];
+      if (ch === "." || HELMET_BACK.includes(ch) === front) continue;
+      if (ch === "L" && !lit) continue;
+      g.fillStyle = ch === "L" ? light.color : HELMET_INK[ch];
+      g.fillRect(x0 + c * ps, y0 + (h.from + r) * ps, ps, ps);
+    }
+  }
+}
+// ...and a jetpack: two tanks behind it that peek out at its shoulders beside the helmet (rounded tops, a t stripe,
+// N nozzles), rows from the shell's top row like HELMET. Flying, the nozzles fire flickering flames that burn behind
+// the claws and come out below them, and drop sparks. Not worn in the flat sneak (it's crawling then).
+const JETPACK = { from: -2, rows: [".T............T.", "TT............TT", "tt............tt", "TT............TT", "NN............NN"] };
+const JET_INK = { T: "#b8c2d6", t: "#ff9a76", N: "#5d6780" };
+const FLAME = ["#ffffff", "#fff3b0", "#ffd36b", "#ffb057", "#ff8a4c", "#ff6b4c", "#e0483f"];
+const sparks = [];
+function drawJetpack(g, ps, pose, fire, t) {
+  if (pose.startsWith("sneak")) return;
+  const x0 = Math.round(-8 * ps), y0 = Math.round(-crabRows(pose) * ps), J = JETPACK;
+  if (fire > 0.05) {
+    const ny = y0 + (J.from + J.rows.length) * ps; // just under the nozzles
+    for (const [i, c0] of [0, 14].entries()) {
+      const n = Math.round(fire * (8.5 + 1.6 * Math.sin(t * 29 + i * 2.1) + 0.9 * Math.sin(t * 13 + i)));
+      for (let k = 0; k < n; k++) {
+        g.fillStyle = FLAME[Math.min(FLAME.length - 1, Math.floor((k / n) * FLAME.length))];
+        if (k < n - 2) g.fillRect(x0 + c0 * ps, ny + k * ps, ps * 2, ps); // full width, then a flickering 1-wide tip
+        else g.fillRect(x0 + (c0 + ((Math.floor(t * 20) + k + i) % 2)) * ps, ny + k * ps, ps, ps);
+      }
+    }
+  }
+  for (let r = 0; r < J.rows.length; r++)
+    for (let c = 0; c < 16; c++) {
+      const ch = J.rows[r][c];
+      if (ch === ".") continue;
+      g.fillStyle = JET_INK[ch]; g.fillRect(x0 + c * ps, y0 + (J.from + r) * ps, ps, ps);
+    }
+}
+// The sparks live in screen space so they fall away behind a flying crab instead of following it.
+function drawSparks(g, dt, x, y, ps, fire) {
+  if (fire > 0.3 && Math.random() < dt * 30) for (const side of [-1, 1]) sparks.push({ x: x + side * 7 * ps + rand(-ps, ps) / 2, y, vy: rand(40, 110), life: rand(0.25, 0.6) });
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const s = sparks[i]; s.life -= dt; s.y += s.vy * dt;
+    if (s.life <= 0) { sparks.splice(i, 1); continue; }
+    g.globalAlpha = Math.min(1, s.life * 3); g.fillStyle = FLAME[1 + (i % 2)];
+    g.fillRect(Math.round(s.x), Math.round(s.y), Math.max(1, ps / 2), Math.max(1, ps / 2));
+  }
+  g.globalAlpha = 1;
+}
 // macOS draws the password field and "Touch ID or Enter Password" over the bottom center of the
 // lock screen once you move the mouse: while that's showing (lockUI.to, set by the screensaver),
 // the crab sneaks under them (crouched, tiptoeing, peeking up) and waits for you beside them. The
 // rest of the time it keeps its usual moves, like running to the center and jumping with "!".
 const LOGIN_HALF = 94; // half their width, in CSS px (112 started the crawl early and ended it late, per Dan on the real lock screen)
-function drawGroundCrab(g, dt, S, p, ps, w, ground, font, round = true, k = 1) {
+// How high the jetpacking crab flies to clear the whole sign-in (your picture, name, field and hint), from the ground,
+// in CSS px. An estimate of macOS's layout, like LOGIN_HALF: tune it if the crab clips the picture on the real lock screen.
+const LOGIN_TOP = 200;
+// gear "astro" (Cosmic): helmet and jetpack, and at the sign-in it picks, each time, to crawl under it or fly over it.
+function drawGroundCrab(g, dt, S, p, ps, w, ground, font, round = true, k = 1, gear = null) {
   const mid = w / 2, edge = LOGIN_HALF / k + 8 * ps, loginUp = lockUI.to === 1 && S.state !== "idle";
   const target = S.state === "waiting" && loginUp ? S.crabTarget + edge + ps * 4 : S.crabTarget;
   // Crouch just before the leading claw reaches the field; stand as the trailing claw clears it.
   const off = walker.x < 0 ? Infinity : walker.x - mid;
   const ahead = S.state === "working" ? -off * walker.dir : -Math.abs(off); // > 0 while still approaching
   const under = loginUp && (ahead > 0 ? ahead < edge + ps * 0.5 : -ahead < edge) ? 1 : 0;
-  walker.duck += (under - walker.duck) * Math.min(1, dt * 14);
+  // The astronaut decides as it nears the sign-in (a bit earlier than the crawl starts, to take off in time).
+  const near = loginUp && (ahead > 0 ? ahead < edge + ps * 14 : -ahead < edge + ps * 2);
+  if (!near) walker.plan = null;
+  else if (!walker.plan) walker.plan = gear === "astro" && Math.random() < 0.5 ? "fly" : "crawl";
+  const flying = walker.plan === "fly";
+  walker.fly = (walker.fly || 0) + ((flying && near ? 1 : 0) - (walker.fly || 0)) * Math.min(1, dt * 2.2);
+  walker.duck += ((flying ? 0 : under) - walker.duck) * Math.min(1, dt * 14);
   const c = stepWalker(dt, S.state, ps, w, target, walker.duck > 0.85);
+  if (walker.fly > 0.05 && S.state === "working") { walker.x += walker.dir * ps * 6 * walker.fly * dt; c.x = walker.x; } // a bit faster in the air
   const dip = c.pose.startsWith("sneak") ? 0 : walker.duck; // the quick crouch into and out of the sneak
-  const sy = 1 - 0.45 * dip, sx = 1 + 0.1 * dip, lift = c.lift * (1 - walker.duck);
+  const hover = walker.fly * (LOGIN_TOP / k + Math.sin(walker.t * 3) * ps * 0.6);
+  const sy = 1 - 0.45 * dip, sx = 1 + 0.1 * dip, lift = c.lift * (1 - walker.duck) * (1 - walker.fly) + hover;
   const by = ground - lift, top = by - ps * crabRows(c.pose) * sy;
   g.fillStyle = p.shadow; g.beginPath();
-  g.ellipse(c.x, ground + ps * 0.4, ps * 7 * sx * (1 - lift / (ps * 9)), Math.max(1, ps * 1.1), 0, 0, TAU); g.fill();
+  g.ellipse(c.x, ground + ps * 0.4, ps * 7 * sx * Math.max(0.15, 1 - lift / (ps * 9)), Math.max(1, ps * 1.1), 0, 0, TAU); g.fill();
   g.save(); g.translate(c.x, by); g.scale(sx, sy);
+  const light = { color: stateColor(p, S.state), fast: S.state === "waiting" }, now = performance.now() / 1000;
+  if (gear === "astro") { drawJetpack(g, ps, c.pose, walker.fly, now); drawHelmet(g, ps, c.pose, false, light, now); }
   drawCrab(g, 0, 0, ps, c.pose, c.leg, p.crab, p.eye, c.blink);
+  if (gear === "astro") drawHelmet(g, ps, c.pose, true, light, now);
   g.restore();
+  if (gear === "astro") drawSparks(g, dt, c.x, by + ps * 2, ps, walker.fly);
   if (S.state === "waiting") bubble(g, c.x + ps * 9, top - ps * 4, ps, p.warn, p.eye, "!", font, round);
   if (S.state === "idle") zzz(g, dt, c.x + ps * 6, top, ps, p.fg, font);
 }
@@ -905,6 +1004,11 @@ const THEME_IMPL = {
         if (i === 0 && S.state === "idle") zzz(g, dt, c.x + c.ps * 6, c.y - c.ps * 5, c.ps, p.fg, "Space Grotesk, sans-serif");
         if (S.state === "waiting") bubble(g, c.x + c.ps * 9, c.y - c.ps * 9, c.ps, p.warn, p.eye, "!", "Space Grotesk, sans-serif");
       });
+      // The walking crab, in an astronaut helmet, on a faint horizon.
+      const gl = g.createLinearGradient(0, 0, W, 0);
+      gl.addColorStop(0, "rgba(196,167,255,0)"); gl.addColorStop(0.5, "rgba(196,167,255,.22)"); gl.addColorStop(1, "rgba(196,167,255,0)");
+      g.fillStyle = gl; g.fillRect(0, L.ground, W, 1);
+      drawGroundCrab(g, dt, S, p, Math.round(clamp(W / 190, 4, 9)), W, L.ground, "Space Grotesk, sans-serif", true, 1, "astro");
       drawConfetti(g, dt);
     },
   },
@@ -1151,6 +1255,12 @@ function makeDemo(kind) {
 }
 const RANK = { waiting: 0, working: 1, thinking: 1, done: 2, idle: 3 };
 const DONE_MS = 10 * 60e3;
+// A working session that hasn't reported anything for a while has probably stalled (an interrupted turn sends no
+// Stop): it drops below the ones really working and the recently finished ones, and isn't picked for the headline.
+// "Thinking" reports often, so 5 min; inside one tool (a long build, say) nothing arrives until it ends, so 20 min.
+const isWorking = (s) => s.state === "working" || s.state === "thinking";
+const isActive = (s, now) => now - (s.updated_at || 0) <= (s.state === "thinking" ? 5 : 20) * 60e3;
+const activeRank = (s, now) => (isWorking(s) && !isActive(s, now) ? 2.5 : RANK[s.state]);
 // Several sessions in the same state: stay on one and rotate every 12s, instead of jumping
 // to whichever session ran a tool most recently (which would flicker on every tool call).
 const ROTATE_MS = 12000;
@@ -1172,9 +1282,11 @@ function derive() {
     if (s.state === "idle") return false;
     if (s.state === "done") return now - (s.done_at || s.updated_at || 0) < DONE_MS;
     return now - (s.updated_at || 0) < 45 * 60e3;
-  }).sort((a, b) => RANK[a.state] - RANK[b.state] || b.updated_at - a.updated_at);
+  }).sort((a, b) => activeRank(a, now) - activeRank(b, now) || b.updated_at - a.updated_at);
   const waiting = live.filter((s) => s.state === "waiting");
-  const working = live.filter((s) => s.state === "working" || s.state === "thinking");
+  const allWorking = live.filter(isWorking);
+  const active = allWorking.filter((s) => isActive(s, now));
+  const working = active.length ? active : allWorking;
   const done = live.find((s) => s.state === "done");
   if (waiting.length) return { state: "waiting", ...pickFocus(waiting, now), live };
   // Prefer sessions with a task list so the list doesn't vanish whenever the rotation lands
@@ -1257,7 +1369,8 @@ function resetsText(at, now) {
 }
 function usageCard() {
   const u = demo ? demoUsage() : usage, now = Date.now();
-  if ((config.showUsage !== true && !demo) || !u || (!u.five_hour && !u.seven_day)) return "";
+  // Demos show sample usage (the website), except the settings thumbnails, which follow your Show plan usage switch.
+  if ((config.showUsage !== true && (!demo || THUMB)) || !u || (!u.five_hour && !u.seven_day)) return "";
   const row = (label, w) => {
     if (!w) return "";
     const fresh = w.resets_at <= now; // the window reset since Claude Code last reported it
@@ -1417,7 +1530,8 @@ function render() {
   if (tm && D.focus && D.focus.task_started) tm.textContent = fmtDur(Date.now() - D.focus.task_started);
 
   const sh = sessionsHTML(D);
-  if (sh !== lastSessHTML) { $("#sessions").innerHTML = sh; lastSessHTML = sh; requestAnimationFrame(measure); }
+  // Refit in the same step (not a frame later), or every redraw would flash the cards that don't fit.
+  if (sh !== lastSessHTML) { $("#sessions").innerHTML = sh; lastSessHTML = sh; fitSessions(); requestAnimationFrame(measure); }
   const d = new Date();
   $("#time").textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   $("#date").textContent = d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
@@ -1431,7 +1545,7 @@ function setTheme(name, persist = true) {
   document.documentElement.dataset.theme = name;
   $("#brand").innerHTML = BRAND[name]();
   mascot = CRAB_MASCOT;
-  walker.x = -1; Z.list = []; confetti = [];
+  walker.x = -1; walker.fly = 0; walker.plan = null; sparks.length = 0; Z.list = []; confetti = [];
   document.querySelectorAll("#themeBtns button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.theme === name)));
   if (W) { measure(); THEME_IMPL[name].init(); }
   if (persist) saveConfig({ theme: name });
@@ -1476,7 +1590,7 @@ async function poll() {
 function setThemes(list) {
   const next = ALL_THEMES.filter((t) => list.includes(t));
   if (next.join() !== THEMES.join()) { THEMES = next; buildThemeBtns(); }
-  if (!THEMES.includes(config.theme)) setTheme("warm", false);
+  if (!THEMES.includes(config.theme)) setTheme(THEMES[0], false);
 }
 
 /* ---------- picker UI ---------- */
@@ -1823,6 +1937,10 @@ resize();
 addEventListener("resize", resize);
 document.fonts?.ready.then(measure);
 document.fonts?.addEventListener?.("loadingdone", measure);
+// The page starts with the text hidden (class on <html>). resize() above laid it out, which started loading the fonts
+// it uses; show the text once they're in (2 s at most, e.g. offline), already measured.
+Promise.race([document.fonts ? document.fonts.ready : null, new Promise((r) => setTimeout(r, 2000))])
+  .then(() => { measure(); document.documentElement.classList.remove("fonts-wait"); });
 poll();
 setInterval(poll, 1000);
 // The screensaver keeps this page alive, hidden, between activations: refresh the moment it shows.
