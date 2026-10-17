@@ -8,12 +8,12 @@
 
 A lock screen for your Mac that shows what your AI coding agents are doing while you're away.
 
-[![Latest release](https://img.shields.io/github/v/release/danamsalem/agent-aquarium?label=download&color=2f9bd8)](https://github.com/danamsalem/agent-aquarium/releases/latest)
+[![Download: free](https://img.shields.io/badge/download-free-2f9bd8)](https://github.com/danamsalem/agent-aquarium/releases/latest)
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-555)
 ![Apple silicon](https://img.shields.io/badge/Apple%20silicon-M1%2B-555)
 ![Works with Claude Code](https://img.shields.io/badge/works%20with-Claude%20Code-d97757)
 
-**[Download for free](https://github.com/danamsalem/agent-aquarium/releases/latest)** · [Website](https://agentaquarium.danamsalem.com) · [Roadmap](https://github.com/danamsalem/agent-aquarium/issues/9) · [Report a bug](https://github.com/danamsalem/agent-aquarium/issues/new/choose)
+**[Download for free](https://github.com/danamsalem/agent-aquarium/releases/latest)** · [Website](https://agentaquarium.danamsalem.com) · [Roadmap](https://github.com/danamsalem/agent-aquarium/issues/9) · [Report a bug](https://github.com/danamsalem/agent-aquarium/issues/new/choose) · [X](https://x.com/dannamsalem)
 
 <br>
 
@@ -172,6 +172,6 @@ Free to download and use; no redistribution or modification. See [LICENSE](LICEN
 
 <div align="center">
 
-Made by [Dan Amsalem](https://github.com/danamsalem). Works with Claude Code. Not affiliated with Anthropic or Google.
+Made by [Dan Amsalem](https://github.com/danamsalem) · [@dannamsalem](https://x.com/dannamsalem) on X. Works with Claude Code. Not affiliated with Anthropic or Google.
 
 </div>
