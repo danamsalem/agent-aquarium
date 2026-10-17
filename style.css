@@ -98,6 +98,7 @@ a.badge:hover { color: var(--fg); }
 .features h2, .page h1 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -.025em; line-height: 1.15; }
 .grid { margin-top: 28px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .card { padding: 22px; border-radius: 16px; background: var(--glass); border: 1px solid var(--line); }
+.card .icon { display: block; width: 40px; height: 40px; padding: 9px; margin-bottom: 14px; border-radius: 11px; color: var(--sea); background: rgba(95, 211, 198, .1); border: 1px solid rgba(95, 211, 198, .2); }
 .card h3 { font-size: 17px; margin-bottom: 6px; }
 .card p { color: var(--muted); font-size: 15px; }
 @media (max-width: 860px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
