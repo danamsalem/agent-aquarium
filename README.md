@@ -122,6 +122,14 @@ No. Claude Code's hooks write each session's state to a file on your Mac, and a 
 </details>
 
 <details>
+<summary><b>Which sessions does it show?</b></summary>
+
+<br>
+
+Claude Code sessions running on your Mac: `claude` in Terminal, and the Claude desktop app's Code tab. It can't see sessions that run in the cloud (marked with a cloud icon in the desktop app), Cowork or Dispatch sessions, Chat, claude.ai or the phone app, because those don't run Claude Code's hooks on your Mac. Want them? [Give it a 👍](https://github.com/danamsalem/agent-aquarium/issues/10).
+</details>
+
+<details>
 <summary><b>Does it work with Codex, Cursor or other agents?</b></summary>
 
 <br>
