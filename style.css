@@ -102,6 +102,7 @@ a.badge:hover { color: var(--fg); }
   border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0, 0, 0, .45); }
 /* Pinned inside the box (like the hero demo), so Safari can't size the page from the video's own 1920px width */
 .player video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; }
+.player iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 
 /* features */
 .features { padding: clamp(48px, 9vh, 96px) 0; }
@@ -122,7 +123,10 @@ a.badge:hover { color: var(--fg); }
 
 /* privacy page */
 .page { padding: clamp(28px, 6vh, 56px) 0 64px; }
-.film-cta { margin-top: 24px; text-align: center; }
+.film .player { margin-top: 0; }
+.film-cta { margin-top: 24px; text-align: center; color: var(--muted); }
+.film-cta + .film-cta { margin-top: 16px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .doc { max-width: 720px; }
 .doc .updated { margin-top: 8px; color: var(--muted); font-size: 14px; }
 .doc .summary { margin-top: 26px; padding: 18px 20px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); }
