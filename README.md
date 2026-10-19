@@ -138,14 +138,6 @@ Claude Code only for now. Support for others is [on the roadmap](https://github.
 </details>
 
 <details>
-<summary><b>Why does Google say the app isn't verified?</b></summary>
-
-<br>
-
-Google is still reviewing the app. Until it's approved, signing in shows a "Google hasn't verified this app" screen: click Advanced → Go to Agent Aquarium. Calendar access is read-only. You can also skip Google and add an Apple or Outlook calendar link instead.
-</details>
-
-<details>
 <summary><b>How do I uninstall it?</b></summary>
 
 <br>
