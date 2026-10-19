@@ -94,7 +94,7 @@ xattr -dr com.apple.quarantine "/Applications/Agent Aquarium.app"
 
 </details>
 
-**Updating?** Replace the app in Applications with the new one; your settings stay. Starring or watching this repo tells you about new versions.
+**Updating?** When a new version is out, the menu bar fish and Settings tell you. Replace the app in Applications with the new one; your settings stay.
 
 ## Tips
 
@@ -173,6 +173,6 @@ Free to download and use; no redistribution or modification. See [LICENSE](LICEN
 
 <div align="center">
 
-Made by [Dan Amsalem](https://github.com/danamsalem) · [@dannamsalem](https://x.com/dannamsalem) on X. Works with Claude Code. Not affiliated with Anthropic or Google.
+Made by [Dan Amsalem](https://github.com/danamsalem) · [@dannamsalem](https://x.com/dannamsalem) on X. Works with Claude Code. Not affiliated with Anthropic, OpenAI or Google.
 
 </div>
