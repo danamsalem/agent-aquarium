@@ -95,9 +95,10 @@ a.badge:hover { color: var(--fg); }
 .seg button[aria-pressed="true"] { background: rgba(255, 255, 255, .12); color: var(--fg); }
 @media (max-width: 560px) { .seg button { padding: 7px 10px; font-size: 13px; } }
 
-/* Video: the film */
+/* Videos: the demo and the film, one player */
 .watch { padding: clamp(24px, 5vh, 48px) 0 0; text-align: center; }
 .watch h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -.025em; line-height: 1.15; }
+.watch .seg { margin-top: 18px; }
 .player { position: relative; width: 100%; max-width: 960px; contain: size layout; margin: 22px auto 0; aspect-ratio: 16 / 9; border-radius: 18px; overflow: hidden; background: #000;
   border: 1px solid var(--line); box-shadow: 0 30px 80px rgba(0, 0, 0, .45); }
 /* Pinned inside the box (like the hero demo), so Safari can't size the page from the video's own 1920px width */
