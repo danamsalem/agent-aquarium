@@ -81,9 +81,6 @@
 
   <section class="wrap watch" id="watch">
     <h2>See it in action</h2>
-    <div class="seg" id="videos" aria-label="Video">
-      <button data-src="/media/demo.mp4" data-poster="/media/demo.jpg" data-label="Agent Aquarium: the demo (0:49)" aria-pressed="true">Demo · 0:49</button><button data-src="/media/film.mp4" data-poster="/media/film.jpg" data-label="Agent Aquarium: the film (2:18)" aria-pressed="false">The film · 2:18</button>
-    </div>
     <div class="player">
       <video id="video" controls playsinline preload="none" poster="/media/demo.jpg" src="/media/demo.mp4" aria-label="Agent Aquarium: the demo (0:49)"></video>
     </div>
@@ -181,19 +178,6 @@
     } catch {}
   });
   pick(document.getElementById("states"), "demo", "setDemo");
-
-  // Two videos, one player: the short demo and the nature-documentary film.
-  const video = document.getElementById("video"), videos = document.getElementById("videos");
-  videos.addEventListener("click", (e) => {
-    const b = e.target.closest("button");
-    if (!b || b.getAttribute("aria-pressed") === "true") return;
-    videos.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-    const playing = !video.paused;
-    video.poster = b.dataset.poster;
-    video.src = b.dataset.src;
-    video.setAttribute("aria-label", b.dataset.label);
-    if (playing) video.play().catch(() => {});
-  });
 
   // A few slow bubbles; skipped when the visitor prefers reduced motion (the CSS hides them too).
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
