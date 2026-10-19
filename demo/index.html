@@ -236,7 +236,9 @@ body[data-state="working"] .dot, body[data-state="waiting"] .dot { animation: pu
 }
 #sessions .more { padding: 0 4px; color: var(--muted); font-size: .85em; }
 .sess .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.sess .p { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sess .p { font-weight: 600; overflow: hidden; white-space: nowrap; }
+.sess .p .mq { display: inline-block; } /* a long name slides (the frame loop moves it) */
+@media (prefers-reduced-motion: reduce) { .sess .p { text-overflow: ellipsis; } .sess .p .mq { display: inline; } }
 /* The session the middle of the screen is showing (its step and task list). */
 .sess.focus {
   border-color: color-mix(in srgb, var(--accent) 60%, transparent);
@@ -378,6 +380,7 @@ function lockUIProgress(now = performance.now()) {
   return lockUI.from + (lockUI.to - lockUI.from) * Math.min(1, (now - lockUI.start) / lockUI.ms);
 }
 window.setSystemLockUI = (on) => {
+  if (qs.has("display")) return; // the always-on display: macOS never draws its sign-in over it, so no crawl, no clock swap
   const now = performance.now(), p = lockUIProgress(now), to = on ? 1 : 0;
   if (to === lockUI.to) return;
   if (to && p === 0) lockUI.dist = calOffset();
@@ -389,8 +392,12 @@ function calOffset() {
   return cards.height ? cards.top - clock.top : 0;
 }
 const easeInOutCubic = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+let lockUITimer = 0;
 function stepLockUI() {
   const p = lockUIProgress();
+  // Backup for when requestAnimationFrame is starved, running only while the clock and cards move.
+  if (p !== lockUI.to && !lockUITimer) lockUITimer = setInterval(stepLockUI, 16);
+  else if (p === lockUI.to && lockUITimer) { clearInterval(lockUITimer); lockUITimer = 0; }
   if (p === lockUI.shown) return;
   lockUI.shown = p;
   fitNoteToLockUI(p);
@@ -402,7 +409,6 @@ function stepLockUI() {
   clock.style.visibility = p === 1 ? "hidden" : "";
   cal.style.transform = `translateY(${(-lockUI.dist * easeInOutCubic(clamp((p - 0.2) / 0.8, 0, 1))).toFixed(2)}px)`;
 }
-setInterval(stepLockUI, 16); // backup for when requestAnimationFrame is starved; a no-op when nothing changed
 // macOS's lock UI also puts a big clock at the top center, over the message strip. Meanwhile the strip
 // shrinks toward its top-left corner until it ends LOCK_CLOCK_HALF left of the screen's center, then
 // grows back. Its crab is drawn with the same scale (noteFit), so it stays on the letters.
@@ -939,6 +945,27 @@ const THEME_IMPL = {
       burst(g, r, r, r / 2.2, 0, color, 1);
       return c;
     },
+    // Perf: the glow behind the hero, pre-rendered once per colour and layout. Filling a big radial gradient with
+    // "lighter" every frame was most of Cosmic's cost in WebKit (CoreGraphics has no fast path for it); copying the
+    // same pixels from an image is cheap. Rendered on whole device pixels so the copy lands 1:1.
+    heroGlow(col, R) {
+      const dpr = canvasDpr || 1, key = [col, R, L.hx, L.hy, dpr].join();
+      if (this.glowLayout !== [R, L.hx, L.hy, dpr].join()) { this.glowLayout = [R, L.hx, L.hy, dpr].join(); this.glows = new Map(); }
+      let glow = this.glows.get(key);
+      if (glow) return glow;
+      const x0 = Math.floor((L.hx - R) * dpr), y0 = Math.floor((L.hy - R) * dpr);
+      const c = document.createElement("canvas");
+      c.width = Math.ceil((L.hx + R) * dpr) - x0; c.height = Math.ceil((L.hy + R) * dpr) - y0;
+      const g = c.getContext("2d");
+      g.setTransform(dpr, 0, 0, dpr, -x0, -y0);
+      const gr = g.createRadialGradient(L.hx, L.hy, 0, L.hx, L.hy, R);
+      gr.addColorStop(0, hexA(col, 0.45)); gr.addColorStop(0.4, hexA(col, 0.12)); gr.addColorStop(1, hexA(col, 0));
+      g.fillStyle = gr; g.fillRect(L.hx - R, L.hy - R, R * 2, R * 2);
+      glow = { img: c, x: x0 / dpr, y: y0 / dpr, w: c.width / dpr, h: c.height / dpr }; // the canvas until the bitmap is ready
+      this.glows.set(key, glow);
+      if (window.createImageBitmap) createImageBitmap(c).then((b) => { glow.img = b; }).catch(() => {});
+      return glow;
+    },
     paintSky(t) {
       const g = this.sky.getContext("2d"), w = this.sky.width, h = this.sky.height;
       const bg = g.createLinearGradient(0, 0, w * 0.3, h);
@@ -987,9 +1014,8 @@ const THEME_IMPL = {
         if (s.life > 0.9) this.shoot = null;
       }
       const col = stateColor(p, S.state), hp = S.hero, R = L.hr * 3.2;
-      const glow = g.createRadialGradient(L.hx, L.hy, 0, L.hx, L.hy, R);
-      glow.addColorStop(0, hexA(col, 0.45)); glow.addColorStop(0.4, hexA(col, 0.12)); glow.addColorStop(1, hexA(col, 0));
-      g.fillStyle = glow; g.fillRect(L.hx - R, L.hy - R, R * 2, R * 2);
+      const glow = this.heroGlow(col, R);
+      g.drawImage(glow.img, glow.x, glow.y, glow.w, glow.h);
       burst(g, L.hx, L.hy, L.hr * hp.scale, hp.rot, col, 1, hp.breathe, t);
       if (S.state === "working") {
         for (let i = 0; i < 3; i++) {
@@ -1147,11 +1173,18 @@ const THEME_IMPL = {
       }
       if (st === "waiting") bubble(g, f.x + f.face * 6 * k, f.y - 34 * k, Math.max(3, Math.round(4 * this.k)), p.warn, p.eye, "!", "ui-rounded, -apple-system, sans-serif");
       if (config.showDetails) {
-        const name = String(f.s.project || "claude"), label = name.length > 22 ? name.slice(0, 21) + "…" : name;
+        const name = String(f.s.project || "claude"), y = st === "done" ? f.y - 26 * k : f.y + 34 * k;
         g.globalAlpha = f.alpha * (st === "done" ? 0.6 : 0.85);
         g.font = `600 ${Math.round(12 * this.k)}px ui-rounded, -apple-system, sans-serif`; g.textAlign = "center";
         g.fillStyle = st === "waiting" ? p.warn : p.fg;
-        g.fillText(label, f.x, st === "done" ? f.y - 26 * k : f.y + 34 * k);
+        const maxW = 150 * this.k, w = g.measureText(name).width;
+        if (w <= maxW) g.fillText(name, f.x, y);
+        else if (REDUCED) g.fillText(name.length > 22 ? name.slice(0, 21) + "…" : name, f.x, y);
+        else { // too long: slide it to show the rest
+          g.save(); g.beginPath(); g.rect(f.x - maxW / 2, y - 14 * this.k, maxW, 19 * this.k); g.clip();
+          g.textAlign = "left"; g.fillText(name, f.x - maxW / 2 + slideOffset(t, w - maxW), y);
+          g.restore();
+        }
         g.globalAlpha = 1;
       }
     },
@@ -1416,6 +1449,16 @@ function setTagline(text) {
 }
 // Enter fades run on the rAF loop: some screensaver/embedded web views freeze the CSS animation timeline.
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// A name too long for its space slides to show the rest every 10 seconds: slide to the end, hold,
+// pop back to the start and wait for the next one. It runs on the page clock, so a session card that
+// gets rebuilt carries on where it was.
+function slideOffset(t, over) {
+  if (over <= 0 || REDUCED) return 0;
+  const move = clamp(over / 30, 1, 7), x = t % 10;
+  if (x >= move + 1.5) return 0; // popped back
+  const q = Math.min(1, x / move);
+  return -over * q * q * (3 - 2 * q);
+}
 const tweens = new Map();
 function tween(el, ms, dy, blur) { if (!REDUCED) tweens.set(el, { start: performance.now(), ms, dy, blur }); }
 function stepTweens(now) {
@@ -1462,7 +1505,7 @@ function sessionsHTML(D) {
     let time = s.state === "done" ? `done ${ago(now - (s.done_at || s.updated_at))}` : s.task_started && s.state !== "idle" ? fmtDur(now - s.task_started) : "";
     if (Array.isArray(s.plan) && s.plan.length) time += `${time ? " · " : ""}step ${Math.min(s.plan.length, s.plan.filter((p) => p.status === "completed").length + 1)}/${s.plan.length}`;
     const focus = D.focus && s.id === D.focus.id ? " focus" : "";
-    return `<div class="sess${focus}"><div class="top"><span class="p">${esc(s.project)}</span><span class="chip ${st}">${STATE_LABEL[s.state] || s.state}</span></div>
+    return `<div class="sess${focus}"><div class="top"><span class="p"><span class="mq">${esc(s.project)}</span></span><span class="chip ${st}">${STATE_LABEL[s.state] || s.state}</span></div>
       <div class="a">${esc(s.action || "")}</div>${time ? `<div class="tm">${time}</div>` : ""}</div>`;
   }).join("");
 }
@@ -1499,9 +1542,21 @@ function stepCarousel(dt) {
   const target = rowW <= railW * 0.88 ? (railW - rowW) / 2 : clamp(railW * 0.34 - cur.offsetLeft, railW * 0.94 - rowW, railW * 0.06);
   if (carousel.x === null || carousel.session !== track.dataset.session) { carousel.x = target; carousel.session = track.dataset.session; }
   else carousel.x += (target - carousel.x) * Math.min(1, dt * (REDUCED ? 60 : 4));
-  track.style.transform = `translateX(${carousel.x.toFixed(1)}px)`;
+  const tf = `translateX(${carousel.x.toFixed(1)}px)`;
+  if (tf !== carousel.tf || track !== carousel.track) { track.style.transform = tf; carousel.tf = tf; carousel.track = track; } // settled: nothing to restyle
 }
 let spinners = [];
+let marquees = null; // session-card names too long for their card: [element, overflow px]; null = measure again
+addEventListener("resize", () => (marquees = null));
+function stepMarquees(t) {
+  if (REDUCED) return;
+  if (!marquees) marquees = [...document.querySelectorAll("#sessions .mq")]
+    .map((el) => [el, el.offsetWidth - el.parentElement.clientWidth]).filter(([, over]) => over > 0);
+  for (const m of marquees) { // written only when it moves: most of the 10 s it stands still
+    const tf = `translateX(${slideOffset(t, m[1]).toFixed(1)}px)`;
+    if (tf !== m[2]) { m[0].style.transform = tf; m[2] = tf; }
+  }
+}
 let lastPlanHTML = null;
 let lastSessHTML = null;
 let lastCalHTML = null;
@@ -1509,7 +1564,7 @@ let lastUsageHTML = null;
 function render() {
   const D = derive();
   current = D;
-  document.body.dataset.state = D.state;
+  if (document.body.dataset.state !== D.state) document.body.dataset.state = D.state;
   if (D.state !== prevState) {
     if (D.state === "done" && (prevState === "working" || prevState === "waiting")) {
       popConfetti(L.hx, L.hy, CONFETTI[config.theme]); hero.spd = 6;
@@ -1525,7 +1580,7 @@ function render() {
   const uh = usageCard();
   if (uh !== lastUsageHTML) { $("#usage").innerHTML = uh; lastUsageHTML = uh; }
   const ph = planHTML(D);
-  $("#nowline").innerHTML = ph ? "" : nowlineHTML(D); // the bar already shows the step, project and time
+  setHTML($("#nowline"), ph ? "" : nowlineHTML(D)); // the bar already shows the step, project and time
   if (ph !== lastPlanHTML) {
     $("#plan").innerHTML = ph; lastPlanHTML = ph;
     document.body.classList.toggle("has-plan", !!ph);
@@ -1534,16 +1589,20 @@ function render() {
     requestAnimationFrame(measure);
   }
   const tm = $("#plan .tm");
-  if (tm && D.focus && D.focus.task_started) tm.textContent = fmtDur(Date.now() - D.focus.task_started);
+  if (tm && D.focus && D.focus.task_started) setText(tm, fmtDur(Date.now() - D.focus.task_started));
 
   const sh = sessionsHTML(D);
   // Refit in the same step (not a frame later), or every redraw would flash the cards that don't fit.
-  if (sh !== lastSessHTML) { $("#sessions").innerHTML = sh; lastSessHTML = sh; fitSessions(); requestAnimationFrame(measure); }
+  if (sh !== lastSessHTML) { $("#sessions").innerHTML = sh; lastSessHTML = sh; fitSessions(); marquees = null; requestAnimationFrame(measure); }
   const d = new Date();
-  $("#time").textContent = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  $("#date").textContent = d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
-  $("#conn").textContent = demo ? `previewing “${demo}”` : online ? "live: connected to Claude Code" : "offline: run the server for live status";
+  setText($("#time"), d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+  setText($("#date"), d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" }));
+  setText($("#conn"), demo ? `previewing “${demo}”` : online ? "live: connected to Claude Code" : "offline: run the server for live status");
 }
+// render() runs every second: writing the same text again would still restyle and lay out the page.
+const setText = (el, text) => { if (el.textContent !== text) el.textContent = text; };
+const htmlOf = new WeakMap();
+const setHTML = (el, html) => { if (htmlOf.get(el) !== html) { el.innerHTML = html; htmlOf.set(el, html); } };
 
 /* ---------- theme switching + config ---------- */
 function setTheme(name, persist = true) {
@@ -1570,6 +1629,8 @@ function saveConfig(patch) {
 /* ---------- live status polling ---------- */
 async function poll() {
   online = false; return render(); // website demo: no local server
+  // Hidden (a screensaver page kept warm between runs): nothing to show; visibilitychange polls the moment it's back.
+  if (document.hidden && online) return;
   try {
     // The screensaver and the always-on display say when they're on screen, for the battery estimate.
     const shown = document.hidden ? "" : SCREENSAVER ? "?shown=saver" : qs.has("display") ? "?shown=display" : "";
@@ -1883,8 +1944,12 @@ const NOTE_ANIMS = [
   },
 ];
 
+// Perf: the strip's canvas covers the screen but only ever holds the crab and its crumbs, so each frame clears just
+// the box they were drawn in (with a margin), and an empty canvas isn't touched at all. Clearing all of it every
+// frame cost more than everything drawn on it.
+let fxDirty = null;
 function stepNote(t, dt) {
-  fxg.clearRect(0, 0, W, H);
+  if (fxDirty) { fxg.clearRect(fxDirty.x, fxDirty.y, fxDirty.w, fxDirty.h); fxDirty = null; }
   const N = note;
   if (!N.letters.length || REDUCED || $("#note").hidden) return;
   for (const L of N.letters) L.fx = blankFx();
@@ -1921,6 +1986,8 @@ function stepNote(t, dt) {
     if (col !== L.col) { L.el.style.color = col; L.col = col; }
   }
   const pal = PAL[config.theme], c = N.crab, ps = N.ps;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  const mark = (x, y, r) => { x0 = Math.min(x0, x - r); y0 = Math.min(y0, y - r); x1 = Math.max(x1, x + r); y1 = Math.max(y1, y + r); };
   fxg.save();
   if (noteFit.s !== 1) { fxg.translate(noteFit.ox, noteFit.oy); fxg.scale(noteFit.s, noteFit.s); fxg.translate(-noteFit.ox, -noteFit.oy); }
   fxg.fillStyle = pal.accent;
@@ -1928,14 +1995,21 @@ function stepNote(t, dt) {
   for (const k of N.crumbs) {
     k.vy += 700 * dt; k.x += k.vx * dt; k.y += k.vy * dt;
     fxg.globalAlpha = Math.min(1, k.life * 2); fxg.fillRect(k.x, k.y, ps, ps);
+    mark(k.x, k.y, ps * 2);
   }
   fxg.globalAlpha = 1;
   if (c.vis > 0.01) {
     fxg.save(); fxg.globalAlpha = c.vis; fxg.translate(c.x, c.y); fxg.rotate(c.rot); fxg.scale(1, c.sy);
     drawCrab(fxg, 0, c.top ? 9 * ps : 0, ps, c.pose, c.leg, pal.crab, pal.eye, false);
     fxg.restore();
+    mark(c.x, c.y, ps * 20 * Math.max(1, c.sy)); // the sprite is at most 18 x 9 pixels from here, rotated and stretched
   }
   fxg.restore();
+  if (x0 < x1) { // in screen space: the strip's scale (noteFit) applies to all of it
+    const { s, ox, oy } = noteFit, X = (x) => ox + (x - ox) * s, Y = (y) => oy + (y - oy) * s;
+    const left = Math.floor(X(x0)) - 2, top = Math.floor(Y(y0)) - 2;
+    fxDirty = { x: left, y: top, w: Math.ceil(X(x1)) + 2 - left, h: Math.ceil(Y(y1)) + 2 - top };
+  }
 }
 
 /* ---------- boot ---------- */
@@ -1959,7 +2033,7 @@ setInterval(() => { verbIdx++; if (current.state === "working") render(); }, 380
 setInterval(() => { idleIdx++; if (current.state === "idle") render(); }, 9000);
 const SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
 let spinI = 0;
-setInterval(() => { const s = $("#spin"); if (s) s.textContent = current.state === "working" ? SPIN[spinI++ % SPIN.length] + " " : current.state === "waiting" ? "! " : "> "; }, 90);
+setInterval(() => { const s = !document.hidden && $("#spin"); if (s) s.textContent = current.state === "working" ? SPIN[spinI++ % SPIN.length] + " " : current.state === "waiting" ? "! " : "> "; }, 90);
 
 let last = performance.now();
 function frame(now) {
@@ -1973,11 +2047,12 @@ function frame(now) {
   stepCarousel(dt);
   stepLockUI();
   for (const sp of spinners) sp.style.transform = `rotate(${(t * 300) % 360}deg)`;
+  stepMarquees(t);
   try { THEME_IMPL[config.theme].draw(ctx, t, dt, S); } catch (err) { console.error(err); THEME_IMPL[config.theme].init(); }
   try { stepNote(t, dt); } catch (err) { console.error(err); note.anim = null; }
 }
 requestAnimationFrame(frame);
-setInterval(measure, 2000);
+setInterval(() => document.hidden || measure(), 2000);
 /* ---------- preview: macOS's lock UI on hover ---------- */
 // In the app's Lock Screen Preview, pointing at the scene works like touching a locked Mac: macOS draws its clock,
 // your picture, name and password field over the screensaver (drawn here like the website demo does), and the page
