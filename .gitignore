@@ -1,0 +1,32 @@
+# Build output (macos/build.sh, macos/release.sh)
+build.noindex/
+dist/
+*.app
+*.saver
+*.zip
+*.sha256
+
+# Google OAuth desktop client: bundled at build time, never committed
+google-client.json
+
+# Swift / Xcode (if you open the Swift files in Xcode)
+.build/
+DerivedData/
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserdata/
+*.xcuserstate
+.swiftpm/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# macOS
+.DS_Store
+._*
+
+# Editors and local tools
+.vscode/
+.idea/
+.claude/
+*.swp

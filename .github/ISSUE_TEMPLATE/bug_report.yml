@@ -26,7 +26,7 @@ body:
     attributes:
       label: Agent Aquarium version
       description: In Finder, right-click Agent Aquarium in Applications → Get Info.
-      placeholder: "0.10.4"
+      placeholder: "1.0.0"
     validations:
       required: true
   - type: input
