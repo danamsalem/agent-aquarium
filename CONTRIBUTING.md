@@ -107,7 +107,7 @@ Today only Claude Code reports to the lock screen. The display side doesn't care
 2. Write `src/hooks/<agent>.js` (or extend `hook.js` with a mode) that maps those events to the file above. Reuse `describe()` in `hook.js` for tool names where it fits.
 3. Add a mode to `macos/bundle.js` (like `agent-aquarium-hook`) so the app's `aquarium-node` can run it, and add the file to its `MODULES` list.
 4. Install and uninstall it like `setup-hooks.js` does for Claude Code: back up the agent's config first, make re-running idempotent, remove only your own entries on uninstall, and **ask before changing it** (the app shows a consent dialog for Claude Code; do the same).
-5. Update the README's "How it works / what it touches" section with exactly what your change writes, and the privacy notes if anything new is stored.
+5. Update "How it works" in [docs/TECHNICAL.md](docs/TECHNICAL.md) with exactly what your change writes, and the privacy notes if anything new is stored.
 6. Add a fake-event example to this file so others can test it without the agent.
 
 Note: the server watches Claude Code transcripts for "stopped" sessions (`wasStopped` in `server.js`); other agents won't have that, so make sure your adapter moves a stopped session out of `working`.
@@ -117,7 +117,7 @@ Note: the server watches Claude Code transcripts for "stopped" sessions (`wasSto
 - One change per PR, and say what you tested (the PR template has a checklist).
 - Don't change how existing themes look unless the PR is about that; include before/after screenshots when you do.
 - No new runtime dependencies without discussing it first: the app ships as one Node binary with no `node_modules`.
-- Nothing may leave the user's Mac beyond what the README lists. New network calls need a good reason and a README update.
+- Nothing may leave the user's Mac beyond what [docs/TECHNICAL.md](docs/TECHNICAL.md#network) lists. New network calls need a good reason and an update there.
 - Run `node check.js` before you push.
 
 ## Reporting bugs and security issues

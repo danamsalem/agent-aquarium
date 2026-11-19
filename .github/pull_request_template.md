@@ -19,6 +19,6 @@
 
 ## Checklist
 
-- [ ] Nothing new leaves the user's Mac (or the README's "What goes over the network" is updated)
-- [ ] If it changes what's written to `~/.claude/settings.json` or `~/.claude/agent-aquarium/`, the README's "How it works" section is updated
+- [ ] Nothing new leaves the user's Mac (or "Network" in docs/TECHNICAL.md is updated)
+- [ ] If it changes what's written to `~/.claude/settings.json` or `~/.claude/agent-aquarium/`, "How it works" in docs/TECHNICAL.md is updated
 - [ ] No new runtime dependencies
