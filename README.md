@@ -24,7 +24,7 @@ A lock screen for your Mac that shows what your AI coding agents are doing while
 
 <br><br>
 
-**⭐ If Agent Aquarium makes stepping away easier, [star the repo](https://github.com/danamsalem/agent-aquarium/stargazers).** It helps other people who code with agents find it.
+**⭐ Like it? [Star the repo](https://github.com/danamsalem/agent-aquarium/stargazers)** so others can find it.
 
 </div>
 
