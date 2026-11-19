@@ -5,7 +5,8 @@
 - Website: https://agentaquarium.danamsalem.com
 - Download (GitHub Releases): https://github.com/danamsalem/agent-aquarium/releases/latest
 - Requirements: a Mac with Apple silicon (M1 or later), macOS 13 or later, and Claude Code
-- Price: free. License: free to use, no redistribution or modification (https://agentaquarium.danamsalem.com/terms)
+- Price: free. License: open source, MIT (https://github.com/danamsalem/agent-aquarium/blob/main/LICENSE)
+- Source code: https://github.com/danamsalem/agent-aquarium
 - Made by Dan Amsalem (https://x.com/dannamsalem), a personal project. Not affiliated with Anthropic, OpenAI or Google.
 
 ## Features

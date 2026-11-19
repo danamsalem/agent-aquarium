@@ -57,6 +57,7 @@
       <li>Click <strong>Connect Claude Code</strong> when asked, then restart any Claude Code sessions that are already open.</li>
       <li>In <strong>System Settings → Screen Saver</strong>, pick <strong>Agent Aquarium</strong> (under Other). To keep your Mac locked while it shows, set Lock Screen → "Require password after screen saver begins" to <strong>Immediately</strong>.</li>
     </ol>
+    <p>Or build it yourself: the app is <a href="https://github.com/danamsalem/agent-aquarium">open source</a> (MIT). With the Xcode Command Line Tools and Node.js 24, run <code>./install.sh</code> in a clone of the repository; it builds the app, puts it in Applications and opens it. Then continue from step 4. Details: <a href="https://github.com/danamsalem/agent-aquarium#build-from-source">Build from source</a>.</p>
 
     <h2>Settings</h2>
     <p>Open them from the fish in your menu bar, or by opening the app.</p>
@@ -94,7 +95,7 @@
     <p>Agent Aquarium menu → <strong>Uninstall Agent Aquarium…</strong> removes the Claude Code hooks, the background service and the screensaver. Then drag the app to the Trash.</p>
 
     <h2>How it works</h2>
-    <p>Claude Code tells Agent Aquarium what each session is doing through hooks. A small server on your Mac, which only accepts connections from your own Mac, turns that into the scene your screensaver shows. Nothing is sent anywhere; see the <a href="/privacy">privacy policy</a>.</p>
+    <p>Claude Code tells Agent Aquarium what each session is doing through hooks. A small server on your Mac, which only accepts connections from your own Mac, turns that into the scene your screensaver shows. Nothing is sent anywhere; see the <a href="/privacy">privacy policy</a>. Exactly what it adds to Claude Code's settings, which files it writes and what the local server accepts is listed in the <a href="https://github.com/danamsalem/agent-aquarium#how-it-works--what-it-touches">README</a>, next to the source code.</p>
 
     <h2>For AI tools</h2>
     <p>A plain-text summary of Agent Aquarium for language models is at <a href="/llms.txt">/llms.txt</a>.</p>
