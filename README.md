@@ -77,28 +77,19 @@ Try them all live on the [website](https://agentaquarium.danamsalem.com).
 
 1. Download the zip from the **[latest release](https://github.com/danamsalem/agent-aquarium/releases/latest)** and double-click it to unzip.
 2. Drag **Agent Aquarium** into your **Applications** folder.
-3. Open it. The app isn't notarized by Apple yet, so macOS blocks it the first time (see below).
+3. Open it. **The first time, macOS blocks it.** That's expected: the app isn't notarized by Apple yet. Do this once:
+
+> [!IMPORTANT]
+> **macOS says "Apple could not verify Agent Aquarium"?**
+>
+> 1. Click **Done** (not Move to Trash).
+> 2. Open **System Settings → Privacy & Security**, scroll down to the message about "Agent Aquarium" and click **Open Anyway**, then enter your password.
+> 3. Open Agent Aquarium again and click **Open**.
+>
+> Or run this in Terminal instead: `xattr -dr com.apple.quarantine "/Applications/Agent Aquarium.app"`
+
 4. Click **Connect Claude Code** when asked, then restart any Claude Code sessions that are already open. (This lets Claude Code tell the app what it's doing. Your settings are backed up first.)
 5. Choose **Agent Aquarium** in **System Settings → Screen Saver** (under Other). To keep your Mac locked while it shows, set Lock Screen → "Require password after screen saver begins" to **Immediately**.
-
-<details>
-<summary><b>macOS says it can't verify "Agent Aquarium"</b></summary>
-
-<br>
-
-That's expected while the app isn't notarized by Apple:
-
-1. Click **Done** (not Move to Trash).
-2. Open **System Settings → Privacy & Security**, scroll down to the message about "Agent Aquarium" and click **Open Anyway**, then enter your password.
-3. Open Agent Aquarium again and click **Open**.
-
-Or, in Terminal:
-
-```bash
-xattr -dr com.apple.quarantine "/Applications/Agent Aquarium.app"
-```
-
-</details>
 
 **Updating?** When a new version is out, the menu bar fish and Settings tell you. Replace the app in Applications with the new one; your settings stay.
 
