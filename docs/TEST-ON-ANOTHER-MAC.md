@@ -27,7 +27,7 @@ the script install, ideally **without Node and without Xcode command line tools*
 - [ ] Preview lock screen button opens a Lock Screen Preview window (not the screensaver) laid out like the full screen; Esc or the close button closes it. Pointing at it draws macOS's clock, your name and the password field over it (the page makes room as on the real lock screen); moving the pointer out hides them.
 - [ ] Real lock: hot corner or `open -a ScreenSaverEngine` with "Require password immediately". Session state, task list and message show. Touch the trackpad: our clock hides while macOS's password field shows, then comes back.
 - [ ] "Needs you" state: trigger a permission prompt in Claude Code while locked; the headline changes.
-- [ ] Google: Sign in → browser opens → (unverified-app warning while Google verification is pending) → "Google Calendar connected" page → meetings show in settings and on the lock screen.
+- [ ] Google: Sign in → browser opens → "Google Calendar connected" page → meetings show in settings and on the lock screen.
 - [ ] iCal: add an Apple/Outlook link, it syncs.
 - [ ] Offline: `launchctl bootout gui/$(id -u)/com.danamsalem.agentaquarium.server`, start the screensaver → the bundled offline page shows. Reopen the app → server is back, saver switches to live within ~10 s.
 - [ ] Reboot → server is running after login without opening the app (`curl -s localhost:4777/status | head -c 100`).

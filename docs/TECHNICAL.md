@@ -50,9 +50,10 @@ The hook doesn't copy your code, your prompts or Claude's replies. It reads the 
 
 Nothing about your agents, code or sessions ever leaves your Mac. There's no account, analytics or telemetry, and no server of ours that receives your data. The only outgoing requests are:
 
-- **Update check:** about once a day, a plain `GET https://agentaquarium.danamsalem.com/latest.json` (nothing is sent with it). Builds run from source skip it.
+- **Update check:** about once a day, a plain `GET https://agentaquarium.danamsalem.com/latest.json` (nothing is sent with it). Running the server straight from source (`node src/server.js`) skips it.
 - **Google Calendar** (only if you connect it): read-only calls to Google's Calendar API with the scopes `calendar.calendarlist.readonly` and `calendar.events.readonly`.
 - **iCal links** (only the ones you add): fetched from the address you pasted.
+- **Google Fonts:** the lock screen and settings pages load a few typefaces (Press Start 2P, VT323, Space Grotesk, and Roboto for the Google button) from `fonts.googleapis.com`. Like any web font request, this shares your IP address with Google.
 
 ## Build from source
 

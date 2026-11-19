@@ -53,7 +53,7 @@ Worth knowing:
   uses it to restart the server and recopy the saver after an update.
 - **Updates:** users re-download for now. Sparkle (signed appcast on GitHub Releases) is the usual next step and needs the same Developer ID.
 
-## 5. Before the beta is public (not signing, but on the same path)
-- Intel support: ship the universal build (~84 MB zipped) or say "Apple silicon only".
-- Google sign-in shows the "unverified app" warning (and a 100-user cap) until Google verification passes (see roadmap).
-- `google-client.json` is inside the app by design (desktop OAuth). Keep it out of the public repo and the website.
+## 5. Related
+- Intel support: ship the universal build (~84 MB zipped) or keep saying "Apple silicon only".
+- `google-client.json` is inside the app by design (desktop OAuth). Keep it out of the repo; the release workflow reads it from the `GOOGLE_CLIENT_JSON` secret.
+- Once notarized, the Homebrew cask can drop its "Open Anyway" caveat, and the app can be submitted to Homebrew's official casks.
