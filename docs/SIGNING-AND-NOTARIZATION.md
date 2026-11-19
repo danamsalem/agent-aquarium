@@ -56,4 +56,4 @@ Worth knowing:
 ## 5. Related
 - Intel support: ship the universal build (~84 MB zipped) or keep saying "Apple silicon only".
 - `google-client.json` is inside the app by design (desktop OAuth). Keep it out of the repo; the release workflow reads it from the `GOOGLE_CLIENT_JSON` secret.
-- Once notarized, the Homebrew cask can drop its "Open Anyway" caveat, and the app can be submitted to Homebrew's official casks.
+- Once notarized, the app can be submitted to Homebrew's official casks (`brew install --cask agent-aquarium`).

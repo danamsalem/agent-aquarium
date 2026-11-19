@@ -100,8 +100,6 @@ xattr -dr com.apple.quarantine "/Applications/Agent Aquarium.app"
 
 </details>
 
-**Prefer Homebrew?** Run `brew tap danamsalem/tap`, `brew trust danamsalem/tap` and `brew install --cask agent-aquarium`, then start from step 3.
-
 **Updating?** When a new version is out, the menu bar fish and Settings tell you. Replace the app in Applications with the new one; your settings stay.
 
 ## Tips
