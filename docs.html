@@ -53,7 +53,17 @@
     <ol>
       <li>Download the zip from the <a href="https://github.com/danamsalem/agent-aquarium/releases/latest" data-goatcounter-click="download-docs">latest release</a> and double-click it to unzip.</li>
       <li>Drag <strong>Agent Aquarium</strong> into your Applications folder.</li>
-      <li>Open it. The app isn't notarized by Apple yet, so the first time macOS says it can't verify it: click <strong>Done</strong>, open <strong>System Settings → Privacy &amp; Security</strong>, click <strong>Open Anyway</strong> next to the message about Agent Aquarium, and open the app again.</li>
+      <li>Open it. <strong>The first time, macOS blocks it.</strong> That's expected: the app isn't notarized by Apple yet. Do this once:
+        <div class="summary important">
+          <strong>macOS says "Apple could not verify Agent Aquarium"?</strong>
+          <ol>
+            <li>Click <strong>Done</strong> (not Move to Trash).</li>
+            <li>Open <strong>System Settings → Privacy &amp; Security</strong>, scroll down to the message about Agent Aquarium and click <strong>Open Anyway</strong>, then enter your password.</li>
+            <li>Open Agent Aquarium again and click <strong>Open</strong>.</li>
+          </ol>
+          <p>Or run this in Terminal instead: <code>xattr -dr com.apple.quarantine "/Applications/Agent Aquarium.app"</code></p>
+        </div>
+      </li>
       <li>Click <strong>Connect Claude Code</strong> when asked, then restart any Claude Code sessions that are already open.</li>
       <li>In <strong>System Settings → Screen Saver</strong>, pick <strong>Agent Aquarium</strong> (under Other). To keep your Mac locked while it shows, set Lock Screen → "Require password after screen saver begins" to <strong>Immediately</strong>.</li>
     </ol>

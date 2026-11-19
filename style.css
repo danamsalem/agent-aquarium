@@ -131,6 +131,9 @@ a.badge:hover { color: var(--fg); }
 .doc .updated { margin-top: 8px; color: var(--muted); font-size: 14px; }
 .doc .summary { margin-top: 26px; padding: 18px 20px; border-radius: 14px; background: var(--glass); border: 1px solid var(--line); }
 .doc .summary ul { margin: 8px 0 0 20px; }
+.doc .summary.important { margin: 12px 0 4px; border-color: var(--accent); border-left-width: 4px; }
+.doc .summary.important ol { margin: 10px 0 0 20px; }
+.doc .summary.important p { margin-top: 10px; }
 .doc h2 { margin-top: 38px; font-size: 21px; letter-spacing: -.01em; }
 .doc p, .doc li { color: #c9dde2; }
 .doc p { margin-top: 12px; }
