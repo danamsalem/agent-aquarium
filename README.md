@@ -14,7 +14,7 @@ A lock screen for your Mac that shows what your AI coding agents are doing while
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-555)
 ![Apple silicon](https://img.shields.io/badge/Apple%20silicon-M1%2B-555)
 ![Works with Claude Code](https://img.shields.io/badge/works%20with-Claude%20Code-d97757)
-[![GitHub stars](https://img.shields.io/github/stars/danamsalem/agent-aquarium?style=social)](https://github.com/danamsalem/agent-aquarium/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/danamsalem/agent-aquarium?style=social)](https://github.com/danamsalem/agent-aquarium)
 
 **[Download for free](https://github.com/danamsalem/agent-aquarium/releases/latest)** · [Website](https://agentaquarium.danamsalem.com) · [Roadmap](https://github.com/danamsalem/agent-aquarium/issues/9) · [Report a bug](https://github.com/danamsalem/agent-aquarium/issues/new/choose) · [X](https://x.com/dannamsalem)
 
@@ -22,15 +22,17 @@ A lock screen for your Mac that shows what your AI coding agents are doing while
 
 <img src="assets/demo.gif" width="800" alt="The Agent Aquarium lock screen cycling through its four themes: Aquarium, Warm, Retro pixel and Cosmic">
 
+▶ [Watch the 49-second demo](https://agentaquarium.danamsalem.com/#video)
+
 <br><br>
 
-**⭐ Like it? [Star the repo](https://github.com/danamsalem/agent-aquarium/stargazers)** so others can find it.
+**⭐ Like it? [Star the repo](https://github.com/danamsalem/agent-aquarium)** so others can find it.
 
 </div>
 
 <br>
 
-Your Mac stays locked, your agents keep going, and everyone walking past can see that you are in fact working rather than assuming you took the 7th coffee break today.
+Your Mac stays locked, your agents keep going, and everyone walking past can see you're actually working, not on your seventh coffee break.
 
 ## Why
 
@@ -44,7 +46,7 @@ Agent Aquarium runs as your screensaver, so your Mac stays locked and asks for y
 
 | | |
 |---|---|
-| **Live agent status** | Every Claude Code session, working, done or waiting for you. The current session's task list is a row of cards that slides along as the agent works. |
+| **Live agent status** | Every Claude Code session: working, done or waiting for you. The current session's task list is a row of cards that slides along as the agent works. |
 | **Needs-you alerts** | The screen glows when an agent is waiting for your approval, so you notice from across the room. |
 | **Your away message** | "Back in 10." "In a meeting." Pick a preset or write your own, in any language, right-to-left included. A little crab plays with the letters. |
 | **Your calendar** | The meeting you're in and what's next, from Google, Apple or Outlook calendars, so people know when you'll be back. |

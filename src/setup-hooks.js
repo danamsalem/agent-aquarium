@@ -9,7 +9,7 @@ const path = require("path");
 const os = require("os");
 
 const SETTINGS = path.join(os.homedir(), ".claude", "settings.json");
-const DATA = process.env.CLAUDE_LOCKSCREEN_DIR || path.join(os.homedir(), ".claude", "lockscreen");
+const DATA = process.env.CLAUDE_LOCKSCREEN_DIR || path.join(os.homedir(), ".claude", "agent-aquarium-dev");
 const CHAIN = path.join(DATA, "statusline-chain.json");
 // The app's status line mode, and statusline.js from the script install (~/.claude/lockscreen/app). Only
 // these: plenty of people call their own script statusline.js, and that one must never count as ours.

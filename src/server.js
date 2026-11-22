@@ -11,7 +11,7 @@ const google = require("./google");
 const battery = require("./battery");
 
 const PORT = Number(process.env.CLAUDE_LOCKSCREEN_PORT) || 4777;
-const DATA = process.env.CLAUDE_LOCKSCREEN_DIR || path.join(os.homedir(), ".claude", "lockscreen");
+const DATA = process.env.CLAUDE_LOCKSCREEN_DIR || path.join(os.homedir(), ".claude", "agent-aquarium-dev");
 const SESSIONS = path.join(DATA, "sessions");
 const CONFIG = path.join(DATA, "config.json");
 const USAGE = path.join(DATA, "usage.json"); // written by statusline.js
@@ -270,12 +270,19 @@ const newer = (a, b) => { // is version a newer than b?
   for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0);
   return false;
 };
+// latest.json may only point at this project's GitHub pages. Parsed, so "/../" can't leave the path.
+function isUpdatePage(url) {
+  try {
+    const u = new URL(url);
+    return u.origin === "https://github.com" && u.pathname.startsWith("/danamsalem/agent-aquarium/");
+  } catch { return false; }
+}
 async function checkForUpdate() {
   if (!APP_VERSION) return;
   try {
     const res = await fetch(UPDATE_URL, { signal: AbortSignal.timeout(15e3), cache: "no-store" });
     const latest = await res.json();
-    const ok = typeof latest.version === "string" && /^\d+(\.\d+)*$/.test(latest.version) && /^https:\/\/(github\.com\/danamsalem\/|agentaquarium\.danamsalem\.com\/)/.test(latest.url || "");
+    const ok = typeof latest.version === "string" && /^\d+(\.\d+)*$/.test(latest.version) && isUpdatePage(latest.url);
     update = ok && newer(latest.version, APP_VERSION) ? { version: latest.version, url: DOWNLOAD_URL || latest.url } : null;
   } catch { /* offline: try again next time */ }
 }
@@ -287,7 +294,11 @@ function syncCalendars(req, res) {
   });
 }
 
+// Only our own addresses: a website that points its domain at 127.0.0.1 (DNS rebinding) sends its own Host and is refused.
+const ALLOWED_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`]);
+
 const server = http.createServer((req, res) => {
+  if (!ALLOWED_HOSTS.has(String(req.headers.host || "").toLowerCase())) return send(res, 403, { error: "forbidden" });
   const { pathname } = new URL(req.url, "http://localhost");
   if (req.method === "GET" && pathname === "/status") {
     battery.markShown(new URL(req.url, "http://localhost").searchParams.get("shown"));

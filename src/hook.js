@@ -6,7 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 
-const DIR = path.join(process.env.CLAUDE_LOCKSCREEN_DIR || path.join(os.homedir(), ".claude", "lockscreen"), "sessions");
+const DIR = path.join(process.env.CLAUDE_LOCKSCREEN_DIR || path.join(os.homedir(), ".claude", "agent-aquarium-dev"), "sessions");
 
 let raw = "";
 process.stdin.on("data", (c) => (raw += c));

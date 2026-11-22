@@ -1,5 +1,5 @@
 // Google Calendar via "Sign in with Google": OAuth for installed apps (loopback redirect + PKCE)
-// and the Calendar API. Read-only. Tokens live in ~/.claude/lockscreen/google.json (owner-only).
+// and the Calendar API. Read-only. Tokens live in ~/.claude/agent-aquarium/google.json (owner-only).
 // The OAuth client ships with the app as google-client.json next to this file (the JSON Google
 // Cloud downloads for a Desktop client). Desktop-app client secrets aren't confidential, per Google.
 const fs = require("fs");

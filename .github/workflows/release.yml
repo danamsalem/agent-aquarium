@@ -1,17 +1,18 @@
 name: Release
 
-# Builds the app on an Apple silicon runner and attaches the zip and its .sha256 to the release.
-# Start it by publishing a release on GitHub (tag vX.Y.Z), or by hand from the Actions tab with a tag.
+# Pushing a tag vX.Y.Z builds the app once on an Apple silicon runner and puts the zip and its .sha256 in a
+# DRAFT release, with notes from macos/release-notes/RELEASE-NOTES-X.Y.Z.md. Test that exact zip, then publish
+# the draft by hand. Publishing doesn't rebuild, so the published zip and SHA-256 are the ones you tested.
 # Required secret GOOGLE_CLIENT_JSON: the contents of google-client.json (the Google OAuth "Desktop app" client),
 # so official downloads have Google Calendar sign-in. The job stops if it's missing.
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing release tag to build and upload to (e.g. v1.1.0)
+        description: Existing tag to build into a draft release (e.g. v1.1.0)
         required: true
 
 permissions:
@@ -22,14 +23,23 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 30
     env:
-      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      TAG: ${{ inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.TAG }}
+          ref: refs/tags/${{ env.TAG }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Refuse to replace a published release
+        run: |
+          if [ "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2>/dev/null)" = "false" ]; then
+            echo "::error::$TAG is already published. Its zip and SHA-256 must not change."
+            exit 1
+          fi
+      - name: Check the release notes exist
+        run: test -f "macos/release-notes/RELEASE-NOTES-${TAG#v}.md"
       - name: Google client
         env:
           GOOGLE_CLIENT_JSON: ${{ secrets.GOOGLE_CLIENT_JSON }}
@@ -45,7 +55,10 @@ jobs:
       - name: Remove the Google client file
         if: always()
         run: rm -f google-client.json
-      - name: Attach to the release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release upload "$TAG" dist/*.zip dist/*.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+      - name: Put them in a draft release
+        run: |
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
+              --title "Agent Aquarium ${TAG#v}" --notes-file "macos/release-notes/RELEASE-NOTES-${TAG#v}.md"
+          fi
+          gh release upload "$TAG" dist/*.zip dist/*.sha256 --clobber --repo "$GITHUB_REPOSITORY"

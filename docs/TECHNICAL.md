@@ -43,6 +43,7 @@ The hook doesn't copy your code, your prompts or Claude's replies. It reads the 
 - Listens on **`127.0.0.1:4777` only** (loopback), so other machines on your network can't reach it.
 - `GET /` (lock screen page), `GET /settings` (settings page), `GET /status` (sessions, config, calendar, usage as JSON).
 - `POST /config`, `/calendars/add|remove|sync`, `/google/connect|calendars|disconnect`, `/update/open`. These accept only `Content-Type: application/json` bodies under 20 KB, so a web page in your browser can't send them without a CORS preflight, which the server doesn't allow.
+- Requests whose Host header isn't 127.0.0.1 or localhost are refused, which blocks DNS-rebinding attacks.
 - `GET /google/callback`: the end of the Google sign-in (loopback OAuth with PKCE).
 - With **Keep Mac awake** on, it runs macOS's own `caffeinate -i` while an agent is working.
 

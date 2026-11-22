@@ -8,7 +8,7 @@ const path = require("path");
 const os = require("os");
 const { spawn } = require("child_process");
 
-const DATA = process.env.CLAUDE_LOCKSCREEN_DIR || path.join(os.homedir(), ".claude", "lockscreen");
+const DATA = process.env.CLAUDE_LOCKSCREEN_DIR || path.join(os.homedir(), ".claude", "agent-aquarium-dev");
 const USAGE = path.join(DATA, "usage.json");
 const CHAIN = path.join(DATA, "statusline-chain.json");
 
