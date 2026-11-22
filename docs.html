@@ -51,8 +51,8 @@
 
     <h2>Install</h2>
     <ol>
-      <li>Download the zip from the <a href="https://github.com/danamsalem/agent-aquarium/releases/latest" data-goatcounter-click="download-docs">latest release</a> and double-click it to unzip.</li>
-      <li>Drag <strong>Agent Aquarium</strong> into your Applications folder.</li>
+      <li>Download the <strong>.dmg</strong> from the <a href="https://github.com/danamsalem/agent-aquarium/releases/latest" data-goatcounter-click="download-docs">latest release</a> and double-click it.</li>
+      <li>In the window that opens, drag <strong>Agent Aquarium</strong> onto <strong>Applications</strong>. Keep that window open: it shows the next steps.</li>
       <li>Open it. <strong>The first time, macOS blocks it.</strong> That's expected: the app isn't notarized by Apple yet. Do this once:
         <div class="summary important">
           <strong>macOS says "Apple could not verify Agent Aquarium"?</strong>
@@ -64,8 +64,8 @@
           <p>Or run this in Terminal instead: <code>xattr -dr com.apple.quarantine "/Applications/Agent Aquarium.app"</code></p>
         </div>
       </li>
-      <li>Click <strong>Connect Claude Code</strong> when asked, then restart any Claude Code sessions that are already open.</li>
-      <li>In <strong>System Settings → Screen Saver</strong>, pick <strong>Agent Aquarium</strong> (under Other). To keep your Mac locked while it shows, set Lock Screen → "Require password after screen saver begins" to <strong>Immediately</strong>.</li>
+      <li>Follow the short setup: it connects Claude Code and opens the right System Settings pages. Then restart any Claude Code sessions that are already open.</li>
+      <li>In <strong>System Settings → Wallpaper</strong> (<strong>Screen Saver</strong> on older macOS), pick <strong>Agent Aquarium</strong>. To keep your Mac locked while it shows, set Lock Screen → "Require password after screen saver begins" to <strong>Immediately</strong>.</li>
     </ol>
     <p>Or build it yourself: the app is <a href="https://github.com/danamsalem/agent-aquarium">open source</a> (MIT). With the Xcode Command Line Tools and Node.js 24, run <code>./install.sh</code> in a clone of the repository; it builds the app, puts it in Applications and opens it. Then continue from step 4. Details: <a href="https://github.com/danamsalem/agent-aquarium/blob/main/docs/TECHNICAL.md#build-from-source">Build from source</a>.</p>
 
