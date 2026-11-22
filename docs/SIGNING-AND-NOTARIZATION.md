@@ -39,7 +39,7 @@ If it's rejected: `xcrun notarytool log <submission-id> --keychain-profile agent
 
 Worth knowing:
 - The Node binary gets re-signed with the maintainer's identity. Postject edits it, so Node.js's original signature is removed first; that's expected.
-- Could be a .dmg instead of a zip (drag-to-Applications window). Not needed for the beta; a zip is fine.
+- Releases now ship as a DMG (`macos/release.sh`). Once signing is set up, sign and notarize the DMG too, and remove the Open Anyway guide from `macos/dmg/background.html`.
 - Consider a script `macos/release.sh` that runs steps 2–3 once the credentials exist.
 
 ## 4. Check what changes once signed

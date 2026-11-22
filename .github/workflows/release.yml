@@ -1,8 +1,8 @@
 name: Release
 
-# Pushing a tag vX.Y.Z builds the app once on an Apple silicon runner and puts the zip and its .sha256 in a
-# DRAFT release, with notes from macos/release-notes/RELEASE-NOTES-X.Y.Z.md. Test that exact zip, then publish
-# the draft by hand. Publishing doesn't rebuild, so the published zip and SHA-256 are the ones you tested.
+# Pushing a tag vX.Y.Z builds the app once on an Apple silicon runner and puts the DMG and its .sha256 in a
+# DRAFT release, with notes from macos/release-notes/RELEASE-NOTES-X.Y.Z.md. Test that exact DMG, then publish
+# the draft by hand. Publishing doesn't rebuild, so the published DMG and SHA-256 are the ones you tested.
 # Required secret GOOGLE_CLIENT_JSON: the contents of google-client.json (the Google OAuth "Desktop app" client),
 # so official downloads have Google Calendar sign-in. The job stops if it's missing.
 
@@ -35,7 +35,7 @@ jobs:
       - name: Refuse to replace a published release
         run: |
           if [ "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2>/dev/null)" = "false" ]; then
-            echo "::error::$TAG is already published. Its zip and SHA-256 must not change."
+            echo "::error::$TAG is already published. Its DMG and SHA-256 must not change."
             exit 1
           fi
       - name: Check the release notes exist
@@ -50,7 +50,7 @@ jobs:
           fi
           printf '%s' "$GOOGLE_CLIENT_JSON" > google-client.json
           echo "REQUIRE_GOOGLE=1" >> "$GITHUB_ENV"
-      - name: Build zip and SHA-256
+      - name: Build DMG and SHA-256
         run: VERSION="${TAG#v}" macos/release.sh
       - name: Remove the Google client file
         if: always()
@@ -61,4 +61,4 @@ jobs:
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --draft --verify-tag \
               --title "Agent Aquarium ${TAG#v}" --notes-file "macos/release-notes/RELEASE-NOTES-${TAG#v}.md"
           fi
-          gh release upload "$TAG" dist/*.zip dist/*.sha256 --clobber --repo "$GITHUB_REPOSITORY"
+          gh release upload "$TAG" dist/*.dmg dist/*.sha256 --clobber --repo "$GITHUB_REPOSITORY"

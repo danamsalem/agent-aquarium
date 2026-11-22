@@ -77,7 +77,7 @@ To build without installing: `macos/build.sh` writes `build.noindex/Agent Aquari
 
 - **Google Calendar sign-in** needs a Google OAuth client ("Desktop app" type). Put its JSON at `./google-client.json` (gitignored) or set `GOOGLE_CLIENT_JSON=/path/to/file.json`. Without it, everything else works, including iCal calendar links.
 - **Universal build (Intel too):** `ARCHS="arm64 x86_64" macos/build.sh` (needs a universal Node and Rosetta).
-- **Release zip + SHA-256:** `VERSION=1.2.3 macos/release.sh` writes `dist/Agent-Aquarium-1.2.3-arm64.zip` and `.sha256`.
+- **Release DMG + SHA-256:** `VERSION=1.2.3 macos/release.sh` writes `dist/Agent-Aquarium-1.2.3-arm64.dmg` and `.sha256`. It installs [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) in a temporary Python environment, and the installer window lives in `macos/dmg/`.
 - **Quick loop without building the app:** `node src/server.js`, then open http://127.0.0.1:4777 (lock screen) and http://127.0.0.1:4777/settings. Set `CLAUDE_LOCKSCREEN_DIR=/tmp/aquarium-dev` to keep test data away from your real install, and `CLAUDE_LOCKSCREEN_PORT=4778` to run next to it.
 - **Checks:** `node check.js` (the same checks CI runs).
 

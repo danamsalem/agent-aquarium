@@ -20,7 +20,8 @@ macos/
   AgentAquariumApp.swift  The app: settings window, menu bar fish, launch agent, hook consent, uninstall
   build.sh                Builds "Agent Aquarium.app" (Node single-executable + Swift app + screensaver)
   bundle.js               Bundles src/*.js into one script for the embedded Node
-  release.sh              Builds the release zip and its .sha256
+  dmg/                    The DMG installer window: layout and background
+  release.sh              Builds the release DMG and its .sha256
 install.sh                Builds from source and installs to /Applications
 screensaver/
   ClaudeLockscreenView.swift   The .saver: a WKWebView showing http://127.0.0.1:4777/?screensaver=1

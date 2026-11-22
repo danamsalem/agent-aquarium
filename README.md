@@ -77,8 +77,8 @@ Try them all live on the [website](https://agentaquarium.danamsalem.com).
 
 **You need:** a Mac with Apple silicon (M1 or later), macOS 13 or later, and [Claude Code](https://claude.com/claude-code).
 
-1. Download the zip from the **[latest release](https://github.com/danamsalem/agent-aquarium/releases/latest)** and double-click it to unzip.
-2. Drag **Agent Aquarium** into your **Applications** folder.
+1. Download the **.dmg** from the **[latest release](https://github.com/danamsalem/agent-aquarium/releases/latest)** and double-click it.
+2. In the window that opens, drag **Agent Aquarium** onto **Applications**. Keep that window open: it shows the next steps.
 3. Open it. **The first time, macOS blocks it.** That's expected: the app isn't notarized by Apple yet. Do this once:
 
 > [!IMPORTANT]

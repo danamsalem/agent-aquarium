@@ -1,0 +1,58 @@
+<!doctype html>
+<!-- Source of background.tiff. Render at 680x540 at 1x and 2x, then join them:
+     tiffutil -cathidpicheck background.png background@2x.png -out background.tiff -->
+<html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box;margin:0}
+:root{--deep:#06243f;--water:#0d4f86;--sky:#5fd3ff;--sand:#ecd3a4;--sand2:#dcbd86;--crab:#ff8a5c;--ink:#06243f;--ink2:#2c4a5e}
+html,body{width:680px;height:540px;overflow:hidden;background:var(--deep)}
+body{position:relative;font-family:ui-rounded,"SF Pro Rounded",-apple-system,sans-serif;color:var(--ink)}
+#art{position:absolute;inset:0}
+h1{position:absolute;top:56px;left:0;width:100%;display:flex;justify-content:center;align-items:center;gap:10px;white-space:pre;color:#eaf7ff;font-size:24px;font-weight:600;letter-spacing:-.015em}
+h1 b{color:var(--sky);font-weight:600}
+.steps{position:absolute;left:36px;top:268px;width:286px;display:grid;gap:15px}
+.step{display:grid;grid-template-columns:26px 1fr;gap:10px;font-size:14.5px;line-height:1.32;font-weight:500}
+.n{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-content:center;font-size:13px;font-weight:700}
+.step strong{font-weight:700}
+.mac{position:absolute;left:346px;top:260px;width:298px;height:132px;border-radius:12px;background:#f6f6f7;box-shadow:0 8px 20px -8px rgba(6,36,63,.55);padding:12px 14px;font-family:-apple-system,sans-serif;color:#1d1d1f}
+.path{font-size:11.5px;font-weight:600;color:#55606a;display:flex;gap:5px;align-items:center}
+.row{margin-top:10px;border-radius:8px;background:#fff;border:1px solid #e1e2e5;padding:10px 11px;display:flex;align-items:center;gap:10px}
+.row p{font-size:12px;line-height:1.3;flex:1}
+.btn{position:relative;flex:none;font-size:12px;font-weight:600;background:#0a7cff;color:#fff;padding:5px 10px;border-radius:6px;outline:2.5px solid var(--crab);outline-offset:2px}
+.hint{margin-top:9px;font-size:11.5px;color:#55606a}
+.keep{position:absolute;left:0;top:414px;width:100%;text-align:center;font-size:13.5px;font-weight:700;color:var(--ink)}
+</style></head><body>
+<svg id="art" width="680" height="540" viewBox="0 -36 680 540"></svg>
+<h1><span class="n" style="background:#eaf7ff;color:#06243f">1</span><span>Drag Agent Aquarium into <b>Applications</b></span></h1>
+<div class="steps">
+ <div class="step"><span class="n">2</span><div><strong>Open it</strong> from your Applications folder.</div></div>
+ <div class="step"><span class="n">3</span><div><strong>Blocked by macOS?</strong> Click <strong>Done</strong>, then go to <strong>System Settings</strong> and click <strong>Open Anyway</strong>.</div></div>
+</div>
+<div class="mac"><div class="path">System Settings &nbsp;›&nbsp; Privacy &amp; Security</div>
+ <div class="row"><p>“Agent Aquarium” was blocked to protect your Mac.</p><span class="btn">Open Anyway</span></div>
+ <div class="hint">Scroll down to Security to find it.</div></div>
+<div class="keep">Keep this window open until the app launches.</div>
+<script>
+const svg=document.getElementById('art'),NS='http://www.w3.org/2000/svg';
+const add=(t,a,p=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e};
+let seed=7;const R=(a=1,b)=>{seed=(seed*16807)%2147483647;const r=(seed-1)/2147483646;return b===undefined?r*a:a+r*(b-a)};
+const defs=add('defs',{});const g=add('linearGradient',{id:'w',x1:0,y1:0,x2:0,y2:1},defs);
+[[0,'#0b3c6e'],[.55,'#0f5a94'],[1,'#157ab5']].forEach(([o,c])=>add('stop',{offset:o,'stop-color':c},g));
+const r=add('linearGradient',{id:'r',x1:0,y1:0,x2:0,y2:1},defs);add('stop',{offset:0,'stop-color':'#bfeaff','stop-opacity':.2},r);add('stop',{offset:1,'stop-color':'#bfeaff','stop-opacity':0},r);
+add('rect',{y:-36,width:680,height:236,fill:'url(#w)'});
+[[70,44,-30],[205,58,-12],[350,46,5],[480,64,18],[620,48,32]].forEach(([x,w,d])=>add('polygon',{points:`${x-w/3},-36 ${x+w/3},-36 ${x+w+d},182 ${x-w+d},182`,fill:'url(#r)'}));
+for(let i=0;i<34;i++){const x=R(680),y=R(8,168);if(y<62&&x>120&&x<560)continue;if((Math.abs(x-170)<58||Math.abs(x-510)<58)&&y>70)continue;add('circle',{cx:x,cy:y,r:R(1,3.2),fill:'none',stroke:'#cdefff','stroke-opacity':R(.25,.55)})}
+// plants at the edges, behind the sand
+const blade=(x,h,c,l)=>add('path',{d:`M${x} 182 C ${x+l} ${182-h*.35}, ${x-l} ${182-h*.7}, ${x+l*.7} ${182-h}`,fill:'none',stroke:c,'stroke-width':5,'stroke-linecap':'round'});
+[[18,92,'#2fae6a',9],[30,126,'#58d27f',-10],[44,78,'#23925a',8],[640,84,'#23925a',-8],[654,132,'#58d27f',10],[668,96,'#2fae6a',-9]].forEach(b=>blade(...b));
+// sand
+add('path',{d:'M0 175 C 90 168, 170 180, 280 175 S 470 168, 560 175 S 650 180, 680 173 L680 504 L0 504Z',fill:'#ecd3a4'});
+add('path',{d:'M0 175 C 90 168, 170 180, 280 175 S 470 168, 560 175 S 650 180, 680 173',fill:'none',stroke:'#dcbd86','stroke-width':3});
+for(let i=0;i<200;i++){const x=R(680),y=R(186,502);add('rect',{x:Math.round(x),y:Math.round(y),width:2,height:2,fill:R()<.6?'#dcbd86':'#f5e4c4'})}
+// arrow from the app to Applications
+add('path',{d:'M248 122 C 298 88, 372 88, 424 118',fill:'none',stroke:'#eaf7ff','stroke-width':4,'stroke-linecap':'round','stroke-dasharray':'1 11'});
+add('path',{d:'M404 96 L426 120 L394 124',fill:'none',stroke:'#eaf7ff','stroke-width':4.5,'stroke-linecap':'round','stroke-linejoin':'round'});
+// the crab, on its own 16-wide sprite
+const rows=["XX.XXXXXXXXXX.XX","XX.XXXXXXXXXX.XX","...XXEXXXXEXX...","...XXEXXXXEXX...","...XXXXXXXXXX...","...XXXXXXXXXX...","...XXXXXXXXXX...","...X.X....X.X...","...X.X....X.X..."],P=3,cx=340-8*P,cy=175-rows.length*P+3;
+add('ellipse',{cx:340,cy:177,rx:27,ry:3.5,fill:'#c7a56e'});
+rows.forEach((row,y)=>[...row].forEach((c,x)=>{if(c==='.')return;add('rect',{x:cx+x*P,y:cy+y*P,width:P+.3,height:P+.3,fill:c==='E'?'#06243f':'#ff8a5c'})}));
+</script></body></html>

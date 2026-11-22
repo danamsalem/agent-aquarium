@@ -4,6 +4,7 @@ dist/
 *.app
 *.saver
 *.zip
+*.dmg
 *.sha256
 
 # Google OAuth desktop client: bundled at build time, never committed

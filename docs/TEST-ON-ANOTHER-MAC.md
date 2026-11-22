@@ -4,14 +4,14 @@ Goal: prove a stranger's Mac works with only the download. Use a Mac (or a fresh
 the script install, ideally **without Node and without Xcode command line tools**.
 
 ## Before you start
-- [ ] Build: `macos/build.sh` → zip with `ditto -c -k --keepParent "build.noindex/Agent Aquarium.app" AgentAquarium.zip`.
+- [ ] Build: `VERSION=1.2.3 macos/release.sh` → `dist/Agent-Aquarium-1.2.3-arm64.dmg`.
 - [ ] Confirm the target has no Node: `command -v node` prints nothing. `xcode-select -p` fails (or note that it doesn't).
 - [ ] Note the macOS version and chip (Apple silicon vs Intel). The default build is **arm64 only**. For an Intel Mac, build with `ARCHS="arm64 x86_64"`.
-- [ ] Transfer the zip the way users will get it (download from a browser, e.g. a private GitHub Release or AirDrop), so it gets the quarantine flag.
+- [ ] Transfer the DMG the way users will get it (download from a browser, e.g. a private GitHub Release or AirDrop), so it gets the quarantine flag.
 - [ ] Have Claude Code installed and signed in on the target.
 
 ## Install
-- [ ] Unzip in Downloads and open it from there → expect the "Move Agent Aquarium to Applications" dialog (App Translocation). Quit.
+- [ ] Open the DMG and open the app from inside it → expect the "Move Agent Aquarium to Applications" dialog (App Translocation). Quit.
 - [ ] Drag to /Applications and open.
   - Ad hoc build (before notarization): expect "Apple could not verify…". System Settings → Privacy & Security → Open Anyway. Write down the exact steps and wording for the beta README.
   - Notarized build: expect only the normal "downloaded from the internet" prompt.
