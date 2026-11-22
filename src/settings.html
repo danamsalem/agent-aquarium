@@ -352,6 +352,11 @@ body.is-offline main { display: none; }
         <div class="text"><b>Always-on display</b><span>Keep the scene full screen on a display, like a second monitor. Press Esc on it to close.</span></div>
         <select class="picker" id="alwaysOn" aria-label="Always-on display"></select>
       </label>
+      <div class="option" id="saverPart" hidden>
+        <div class="text"><b>Screen saver</b><span id="saverHint">Missing from System Settings? Add it back.</span></div>
+        <button class="btn ghost" id="runSetup">Run setup</button>
+        <button class="btn" id="readdSaver">Re-add to System Settings</button>
+      </div>
       <label class="option">
         <div class="text"><b>Keep my Mac awake while agents work</b><span id="awakeHint">Your Mac won't fall asleep mid-task. The screen still locks.</span></div>
         <div class="switch"><input type="checkbox" id="keepAwake"><span></span></div>
@@ -734,6 +739,15 @@ $("#alwaysOn").addEventListener("change", (e) => {
   if (app) app.postMessage(Number(e.target.value));
   toast(e.target.value === "0" ? "Always-on display off" : `Showing on ${e.target.selectedOptions[0].textContent}`);
 });
+// The app says whether the screensaver is installed, and adds it back or reruns the guided setup.
+const saverApp = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.saver;
+window.setSaverState = ({ installed }) => {
+  $("#saverPart").hidden = false;
+  $("#saverHint").textContent = installed ? "Missing from System Settings? Add it back." : "It's missing from System Settings. Add it back to use it.";
+  $("#readdSaver").classList.toggle("primary", !installed);
+};
+$("#readdSaver").addEventListener("click", () => { if (saverApp) saverApp.postMessage("readd"); toast("Added. Pick Agent Aquarium in System Settings."); });
+$("#runSetup").addEventListener("click", () => { if (saverApp) saverApp.postMessage("setup"); });
 // Shows the lock screen without starting the real screensaver: a preview window in the app, or a new tab in a browser.
 $("#preview").addEventListener("click", () => {
   const app = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.preview;

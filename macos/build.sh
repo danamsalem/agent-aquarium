@@ -65,7 +65,7 @@ EOF
     --sentinel-fuse "$SEA_FUSE" --macho-segment-name NODE_SEA >/dev/null
 done
 fat aquarium-node "$C/MacOS/aquarium-node"
-cp "$SRC/index.html" "$SRC/settings.html" "$C/Resources/app/"
+cp "$SRC/index.html" "$SRC/settings.html" "$SRC/setup.html" "$SRC/thumbnail@2x.png" "$C/Resources/app/"
 # Node's license (which also covers the libraries Node includes) has to ship with every copy of the runtime we embed.
 NODE_LICENSE="$HERE/licenses/node-$("$NODE" -v)-LICENSE.txt"
 if [[ ! -f "$NODE_LICENSE" ]]; then
@@ -140,6 +140,7 @@ cat > "$SAVER/Contents/Info.plist" <<EOF
 </plist>
 EOF
 cp "$SRC/index.html" "$SAVER/Contents/Resources/index.html" # shown when the server isn't running
+cp "$SRC/thumbnail.png" "$SRC/thumbnail@2x.png" "$SAVER/Contents/Resources/" # the tile in System Settings
 
 echo "4/5  Icon"
 xcrun swift "$HERE/make-icon.swift" "$ROOT/brand/agent-aquarium-icon-1024.png" "$TMP/icon.png"

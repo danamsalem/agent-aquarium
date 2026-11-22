@@ -18,6 +18,8 @@ const USAGE = path.join(DATA, "usage.json"); // written by statusline.js
 const CLAUDE_SETTINGS = path.join(os.homedir(), ".claude", "settings.json");
 const PAGE = path.join(__dirname, "index.html");
 const SETTINGS_PAGE = path.join(__dirname, "settings.html");
+const SETUP_PAGE = path.join(__dirname, "setup.html");
+const THUMBNAIL = path.join(__dirname, "thumbnail@2x.png");
 const THEMES = ["aquarium", "warm", "pixel", "cosmic"]; // in the order settings lists them; the first is the default
 function themes() {
   const list = THEMES.slice();
@@ -321,6 +323,14 @@ const server = http.createServer((req, res) => {
   if (req.method === "GET" && pathname === "/settings") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
     return fs.createReadStream(SETTINGS_PAGE).pipe(res);
+  }
+  if (req.method === "GET" && pathname === "/setup") {
+    res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+    return fs.createReadStream(SETUP_PAGE).pipe(res);
+  }
+  if (req.method === "GET" && pathname === "/thumbnail.png") {
+    res.writeHead(200, { "content-type": "image/png", "cache-control": "no-store" });
+    return fs.createReadStream(THUMBNAIL).pipe(res);
   }
   if (req.method === "GET" && (pathname === "/" || pathname === "/index.html")) {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });

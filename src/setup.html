@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up Agent Aquarium</title>
+<style>
+:root { --deep: #062a4a; --fg: #eaf7ff; --muted: #b5d3e6; --sky: #5fd3ff; --ok: #8ef0a8; --crab: #ff8a5c; --ink: #06243f; --sand: #ecd3a4; --line: rgba(234,247,255,.18); --card: rgba(255,255,255,.08); color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--deep); color: var(--fg); overflow: hidden; }
+body { font: 14px/1.45 ui-rounded, "SF Pro Rounded", -apple-system, sans-serif; display: flex; flex-direction: column; -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none; }
+::selection { background: var(--sky); color: var(--ink); }
+button { font: inherit; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--sky); outline-offset: 2px; }
+.scene { position: relative; height: 158px; flex: none; overflow: hidden; background: linear-gradient(#0b3c6e, #0f5a94 62%, #157ab5); }
+.ray { position: absolute; top: 0; height: 132px; background: linear-gradient(rgba(191,234,255,.2), rgba(191,234,255,0)); clip-path: polygon(34% 0, 66% 0, 100% 100%, 0 100%); }
+.sand { position: absolute; left: 0; right: 0; bottom: 0; height: 28px; background: var(--sand); border-top: 3px solid #dcbd86; border-radius: 50% 50% 0 0 / 7px 7px 0 0; }
+.plant { position: absolute; bottom: 20px; width: 34px; height: 92px; }
+#crab { position: absolute; bottom: 19px; left: 50%; margin-left: -24px; width: 48px; height: 27px; }
+#crab.walks { transition: transform .9s cubic-bezier(.16,1,.3,1); }
+.dots { position: absolute; left: 0; right: 0; bottom: 7px; display: flex; justify-content: center; gap: 74px; }
+.dots i { width: 8px; height: 8px; border-radius: 50%; background: #c7a56e; }
+.dots i.on { background: var(--ink); }
+main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 22px 28px 22px; }
+h1 { font-size: 23px; line-height: 1.15; font-weight: 700; letter-spacing: -.015em; text-wrap: balance; }
+.lead { margin-top: 8px; color: var(--muted); font-size: 14.5px; }
+.guide { margin-top: 16px; padding: 13px 14px; border-radius: 12px; background: #f6f6f7; color: #1d1d1f; font-family: -apple-system, sans-serif; box-shadow: 0 8px 20px -10px rgba(0,0,0,.6); }
+.crumb { font-size: 11.5px; font-weight: 600; color: #55606a; }
+.tile { margin-top: 9px; display: flex; align-items: center; gap: 12px; font-size: 12.5px; font-weight: 600; }
+.tile img { width: 112px; height: 72px; border-radius: 7px; outline: 3px solid var(--crab); outline-offset: 2px; display: block; }
+.tile span { color: #55606a; font-weight: 500; display: block; margin-top: 2px; }
+.row { margin-top: 9px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border-radius: 8px; background: #fff; border: 1px solid #e1e2e5; font-size: 12px; line-height: 1.3; }
+.row b { flex: none; font-weight: 600; padding: 3px 8px; border-radius: 6px; outline: 2.5px solid var(--crab); outline-offset: 1px; background: #eef0f3; }
+.facts { margin-top: 15px; display: grid; gap: 8px; font-size: 13.5px; color: var(--muted); }
+.facts li { list-style: none; display: grid; grid-template-columns: 16px 1fr; gap: 8px; }
+.facts svg { width: 16px; height: 16px; margin-top: 2px; color: var(--ok); }
+code { font: 12.5px ui-monospace, Menlo, monospace; color: var(--fg); }
+.good { margin-top: 15px; display: flex; align-items: center; gap: 8px; color: var(--ok); font-weight: 600; }
+.good svg { width: 18px; height: 18px; }
+.actions { margin-top: auto; padding-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.btn { height: 42px; border-radius: 11px; font-weight: 700; font-size: 15px; background: var(--crab); color: var(--ink); transition: background .15s ease, transform .1s ease; }
+.btn:hover { background: #ff9d76; }
+.btn:active { transform: scale(.98); }
+.btn.alt { background: var(--card); color: var(--fg); box-shadow: inset 0 0 0 1px var(--line); }
+.btn.alt:hover { background: rgba(255,255,255,.14); }
+.link { height: 30px; background: none; color: var(--muted); font-weight: 600; border-radius: 8px; }
+.link:hover { color: var(--fg); }
+@media (prefers-reduced-motion: reduce) { #crab.walks, .btn { transition: none; } }
+</style>
+</head>
+<body>
+<div class="scene" aria-hidden="true">
+  <div class="ray" style="left:18px;width:96px"></div><div class="ray" style="left:164px;width:118px"></div><div class="ray" style="left:322px;width:90px"></div>
+  <svg class="plant" style="left:4px" viewBox="0 0 34 92" fill="none" stroke-width="5" stroke-linecap="round"><path d="M9 92C17 62 2 40 13 8" stroke="#58d27f"/><path d="M25 92C17 72 31 56 23 34" stroke="#2fae6a"/></svg>
+  <svg class="plant" style="right:4px" viewBox="0 0 34 92" fill="none" stroke-width="5" stroke-linecap="round"><path d="M24 92C16 62 32 40 20 4" stroke="#58d27f"/><path d="M8 92C16 72 3 56 11 30" stroke="#23925a"/></svg>
+  <div class="sand"><div class="dots" id="dots"></div></div>
+  <svg id="crab" viewBox="0 0 16 9" shape-rendering="crispEdges"></svg>
+</div>
+<main id="step" aria-live="polite"></main>
+<script>
+const app = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.setup;
+const send = (action) => { if (app) app.postMessage(action); };
+const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 8.5 3.2 3.2L13 4.8"/></svg>';
+let state = { claude: false, saver: true, required: true, pane: "Wallpaper" }, at = 0, opened = {};
+// The app reports every 2 s: redraw only on a real change, so a button is never replaced in the middle of a click.
+window.setSetupState = (next) => {
+  if (JSON.stringify(next) === JSON.stringify(state)) return;
+  state = next;
+  render();
+};
+const later = () => (state.required ? [] : [["Later", next, "link"]]);
+
+const SPRITES = {
+  walk: ["...XXXXXXXXXX...", "...XXXXXXXXXX...", "...XXEXXXXEXX...", "XXXXXEXXXXEXXXXX", "XX.XXXXXXXXXX.XX", "...XXXXXXXXXX...", "...XXXXXXXXXX...", "...X.X....X.X...", "...X.X....X.X..."],
+  wave: ["XX.XXXXXXXXXX.XX", "XX.XXXXXXXXXX.XX", "...XXEXXXXEXX...", "...XXEXXXXEXX...", "...XXXXXXXXXX...", "...XXXXXXXXXX...", "...XXXXXXXXXX...", "...X.X....X.X...", "...X.X....X.X..."],
+};
+function drawCrab(rows) {
+  document.getElementById("crab").innerHTML = rows.flatMap((row, y) => [...row].map((c, x) => c === "." ? "" : `<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${c === "E" ? "#06243f" : "#ff8a5c"}"/>`)).join("");
+}
+document.getElementById("dots").innerHTML = "<i></i><i></i><i></i><i></i>";
+
+const STEPS = [
+  () => ({
+    title: state.claude ? "Claude Code is connected" : "Connect Claude Code",
+    lead: "This is how the lock screen knows what your sessions are doing.",
+    body: state.claude
+      ? `<p class="good">${CHECK}Connected. Restart any open Claude Code sessions.</p>`
+      : `<ul class="facts"><li>${CHECK}<span>Adds hooks and a status line to <code>~/.claude/settings.json</code>, after backing it up.</span></li><li>${CHECK}<span>Your own status line keeps working.</span></li><li>${CHECK}<span>Session status stays on this Mac. Remove it any time.</span></li></ul>`,
+    actions: state.claude ? [["Continue", next]] : [["Connect Claude Code", () => send("connect")], state.required ? ["Quit Agent Aquarium", () => send("quit"), "link"] : ["Not now", () => { send("skipConnect"); next(); }, "link"]],
+  }),
+  () => ({
+    title: "Pick Agent Aquarium as your screen saver",
+    lead: opened.saver ? "In the window that opened, find Agent Aquarium and click it:" : "macOS needs you to choose it yourself. It's one click.",
+    body: `<div class="guide"><div class="crumb">System Settings &nbsp;›&nbsp; ${state.pane}</div><div class="tile"><img src="/thumbnail.png" alt="The Agent Aquarium screen saver"><div>Agent Aquarium<span>Click to select it</span></div></div></div>`,
+    actions: [
+      ...(opened.saver ? [["I picked it", next], [`Open ${state.pane} Settings again`, () => send("saver"), "alt"]] : [[`Open ${state.pane} Settings`, () => { opened.saver = true; send("saver"); render(); }]]),
+      [`Not in the list? Add it to ${state.pane} Settings`, () => { opened.saver = true; send("readd"); render(); }, "link"],
+      ...(opened.saver ? [] : later()),
+    ],
+  }),
+  () => ({
+    title: "Keep your Mac locked while it shows",
+    lead: opened.lock ? "Set this option to Immediately:" : "So nobody can use your Mac while your agents work.",
+    body: `<div class="guide"><div class="crumb">System Settings &nbsp;›&nbsp; Lock Screen</div><div class="row"><span>Require password after screen saver begins or display is turned off</span><b>Immediately</b></div></div>`,
+    actions: opened.lock ? [["I set it", next], ["Open Lock Screen Settings again", () => send("lock"), "alt"]] : [["Open Lock Screen Settings", () => { opened.lock = true; send("lock"); render(); }], ...later()],
+  }),
+  () => ({
+    title: "Your aquarium is ready",
+    lead: "Lock your Mac and your agents keep working. Don't tap the glass.",
+    body: state.claude ? "" : `<p class="lead">Claude Code isn't connected yet. You can connect it from the Agent Aquarium menu.</p>`,
+    actions: [["Preview the lock screen", () => send("finishPreview")], ["Go to Settings", () => send("finish"), "alt"]],
+  }),
+];
+function next() { at = Math.min(at + 1, STEPS.length - 1); render(); }
+function render() {
+  const s = STEPS[at]();
+  const main = document.getElementById("step");
+  main.innerHTML = `<h1>${s.title}</h1><p class="lead">${s.lead}</p>${s.body}<div class="actions"></div>`;
+  const box = main.querySelector(".actions");
+  s.actions.forEach(([label, run, kind], i) => {
+    const b = document.createElement("button");
+    b.className = kind === "link" ? "link" : kind === "alt" ? "btn alt" : "btn";
+    b.textContent = label; b.onclick = run; box.append(b);
+  });
+  [...document.querySelectorAll("#dots i")].forEach((d, i) => d.classList.toggle("on", i <= at));
+  document.getElementById("crab").style.transform = `translateX(${(at - (STEPS.length - 1) / 2) * 82}px)`; // over this step's dot
+  drawCrab(at === STEPS.length - 1 ? SPRITES.wave : SPRITES.walk);
+}
+const start = Number(new URLSearchParams(location.search).get("step"));
+if (start >= 0 && start < STEPS.length) at = start;
+render();
+const crab = document.getElementById("crab");
+getComputedStyle(crab).transform; // settle the first position, so the crab only walks between steps
+crab.classList.add("walks");
+send("state");
+</script>
+</body>
+</html>

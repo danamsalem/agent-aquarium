@@ -12,6 +12,12 @@ import WebKit
 
 private let settingsURL = URL(string: "http://127.0.0.1:4777/settings")!
 private let displayURL = URL(string: "http://127.0.0.1:4777/?display=1")!
+private let setupURL = URL(string: "http://127.0.0.1:4777/setup")!
+/// Newer macOS moved screen savers into the Wallpaper pane and removed the Screen Saver pane, whose link then opens General.
+private let hasScreenSaverPane = ((try? FileManager.default.contentsOfDirectory(atPath: "/System/Library/ExtensionKit/Extensions")) ?? [])
+    .contains { $0.hasPrefix("ScreenSaver") }
+private let saverPaneName = hasScreenSaverPane ? "Screen Saver" : "Wallpaper"
+private let saverPaneURL = URL(string: "x-apple.systempreferences:com.apple.\(hasScreenSaverPane ? "ScreenSaver" : "Wallpaper")-Settings.extension")!
 /// The preview also gets your name, for the macOS sign-in it draws over the scene when you point at it.
 private var previewURL: URL {
     var c = URLComponents(string: "http://127.0.0.1:4777/")!
@@ -53,6 +59,7 @@ private enum Pref {
     static let usageDeclined = "usageDeclined"
     static let usageAsked = "usageAsked"
     static let saverPrompted = "saverPrompted"
+    static let setupDone = "setupDone"
     static let serverBuild = "serverBuild"
     static let desktopChecked = "legacyDesktopChecked"
     static let alwaysOnDisplay = "alwaysOnDisplay" // the CGDirectDisplayID of the screen it runs on, 0 when off
@@ -366,7 +373,12 @@ private func run(_ tool: String, _ args: [String]) -> (status: Int32, output: St
 private var buildNumber: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "0" }
 private var nodeBinary: URL { Bundle.main.bundleURL.appendingPathComponent("Contents/MacOS/aquarium-node") }
 
-final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKScriptMessageHandler, NSMenuDelegate, NSWindowDelegate {
+/// The setup window floats beside System Settings, so its first click has to press the button, not just focus the window.
+private final class FirstClickWebView: WKWebView {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, WKScriptMessageHandler, NSMenuDelegate, NSWindowDelegate, NSMenuItemValidation {
     private var window: NSWindow!
     private var webView: WKWebView!
     private var retryTimer: Timer?
@@ -377,6 +389,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private var alwaysOn: AlwaysOnWindow?
     private var preview: PreviewWindow?
     private var statusMenu: StatusMenu?
+    private var setupWindow: NSWindow?
+    private var setupWeb: WKWebView?
+    private var setupTimer: Timer?
+    private var previewAfterSetup = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         buildMenu()
@@ -386,17 +402,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         let atLogin = NSAppleEventManager.shared().currentAppleEvent?
             .paramDescriptor(forKeyword: keyAEPropData)?.enumCodeValue == keyAELaunchedAsLogInItem
 
+        // Anyone who already got past the old first-run prompt keeps using the app as before.
+        if UserDefaults.standard.bool(forKey: Pref.saverPrompted) { UserDefaults.standard.set(true, forKey: Pref.setupDone) }
         migrateLegacyInstall()
         installScreenSaver()
         startServer()
         makeWindow()
-        statusMenu = StatusMenu()
-        statusMenu?.openSettings = { [weak self] in self?.openSettings() }
-        statusMenu?.openPreview = { [weak self] in self?.showPreview() }
         fishDisplayMenu = NSMenu(title: "Always-On Display")
         fishDisplayMenu.delegate = self
-        statusMenu?.displayMenu = fishDisplayMenu
-        if atLogin { NSApp.setActivationPolicy(.accessory) } else { openSettings() }
+        if setupDone { startStatusMenu() }
+        if atLogin && setupDone { NSApp.setActivationPolicy(.accessory) } else { openSettings() }
         updateAlwaysOn()
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
             self?.updateAlwaysOn() // a display was plugged in, unplugged or rearranged
@@ -455,7 +470,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         webView?.evaluateJavaScript("window.setDisplays && window.setDisplays(\(json))")
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { sendDisplays() }
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if webView === setupWeb { return sendSetupState() }
+        sendDisplays()
+        sendSaverState()
+    }
 
     private func setAlwaysOn(_ id: UInt32) {
         alwaysOnID = id
@@ -501,6 +520,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         let config = WKWebViewConfiguration()
         config.userContentController.add(self, name: "preview") // the page's Preview lock screen button
         config.userContentController.add(self, name: "alwaysOn") // the page's Always-on display picker
+        config.userContentController.add(self, name: "saver") // the page's Re-add and Run setup buttons
         webView = WKWebView(frame: window.contentView!.bounds, configuration: config)
         webView.autoresizingMask = [.width, .height]
         webView.navigationDelegate = self
@@ -510,7 +530,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     }
 
     private var asked = false
+    private func startStatusMenu() {
+        guard statusMenu == nil else { return }
+        statusMenu = StatusMenu()
+        statusMenu?.openSettings = { [weak self] in self?.openSettings() }
+        statusMenu?.openPreview = { [weak self] in self?.showPreview() }
+        statusMenu?.displayMenu = fishDisplayMenu
+    }
+
     private func openSettings() {
+        if !setupDone { return showSetup() }
         NSApp.setActivationPolicy(.regular)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
@@ -526,12 +555,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
     /// With no window left, the app leaves the Dock and stays in the menu bar.
     func windowWillClose(_ notification: Notification) {
-        DispatchQueue.main.async { if !self.window.isVisible && self.preview == nil { NSApp.setActivationPolicy(.accessory) } }
+        if (notification.object as? NSWindow) === setupWindow { return setupClosed() }
+        DispatchQueue.main.async { if !self.window.isVisible && self.preview == nil && self.setupWindow == nil { NSApp.setActivationPolicy(.accessory) } }
+    }
+
+    func windowDidBecomeKey(_ notification: Notification) {
+        if (notification.object as? NSWindow) === window { sendSaverState() }
     }
 
     func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
         if message.name == "preview" { showPreview() }
         if message.name == "alwaysOn", let id = message.body as? NSNumber { setAlwaysOn(id.uint32Value) }
+        if message.name == "saver", let action = message.body as? String {
+            if action == "readd" { readdScreenSaver() }
+            if action == "setup" { showSetup() }
+        }
+        if message.name == "setup", let action = message.body as? String { handleSetup(action) }
     }
 
     private func showPreview() {
@@ -549,6 +588,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
 
     // Server not up yet (e.g. right after login or first launch): show a short note and keep retrying.
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        if webView === setupWeb { // the server is still starting
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in self?.setupWeb?.load(URLRequest(url: setupURL)) }
+            return
+        }
         webView.loadHTMLString("""
             <body style="font:15px -apple-system;color:#888;display:grid;place-items:center;height:90vh;text-align:center">
             <div><b style="color:#d97757">Connecting to the lock screen server…</b><br>
@@ -635,10 +678,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     private var bundledSaver: URL { Bundle.main.bundleURL.appendingPathComponent("Contents/Library/Screen Savers/\(saverName)") }
     private var installedSaver: URL { userSavers.appendingPathComponent(saverName) }
 
-    private func installScreenSaver() {
+    private func installScreenSaver(force: Bool = false) {
         let version = { (url: URL) in Bundle(url: url).flatMap { NSDictionary(contentsOf: $0.bundleURL.appendingPathComponent("Contents/Info.plist"))?["CFBundleVersion"] as? String } }
         guard fm.fileExists(atPath: bundledSaver.path),
-              version(installedSaver) != version(bundledSaver) || !fm.fileExists(atPath: installedSaver.path) else { return }
+              force || version(installedSaver) != version(bundledSaver) || !fm.fileExists(atPath: installedSaver.path) else { return }
         do {
             try fm.createDirectory(at: userSavers, withIntermediateDirectories: true)
             if fm.fileExists(atPath: installedSaver.path) { try fm.removeItem(at: installedSaver) }
@@ -654,8 +697,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         UserDefaults.standard.set(true, forKey: Pref.saverPrompted)
         let alert = NSAlert()
         alert.messageText = "Choose Agent Aquarium as your screen saver"
-        alert.informativeText = "macOS doesn't let apps do this step: in Screen Saver settings, pick “Agent Aquarium” (under Other).\n\nTo keep your Mac locked while it shows, set Lock Screen → “Require password after screen saver begins” to Immediately."
-        alert.addButton(withTitle: "Open Screen Saver Settings")
+        alert.informativeText = "macOS doesn't let apps do this step: in \(saverPaneName) settings, pick “Agent Aquarium”.\n\nTo keep your Mac locked while it shows, set Lock Screen → “Require password after screen saver begins” to Immediately."
+        alert.addButton(withTitle: "Open \(saverPaneName) Settings")
         alert.addButton(withTitle: "Later")
         alert.beginSheetModal(for: window) { response in
             if response == .alertFirstButtonReturn { self.openScreenSaverSettings() }
@@ -663,7 +706,121 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
     }
 
     @objc private func openScreenSaverSettings() {
-        NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.ScreenSaver-Settings.extension")!)
+        NSWorkspace.shared.open(saverPaneURL)
+    }
+
+    /// Puts the screensaver back (people can delete it from System Settings) and shows it. System Settings only
+    /// rescans its list when it starts, so a running copy is quit first.
+    @objc private func readdScreenSaver() {
+        installScreenSaver(force: true)
+        sendSaverState()
+        reopenScreenSaverSettings()
+    }
+
+    private func reopenScreenSaverSettings() {
+        let running = NSRunningApplication.runningApplications(withBundleIdentifier: "com.apple.systempreferences")
+        running.forEach { $0.terminate() }
+        openSaverPane(after: running, tries: 30)
+    }
+
+    /// Waits for System Settings to finish quitting: a link sent to a copy that's on its way out is lost.
+    private func openSaverPane(after running: [NSRunningApplication], tries: Int) {
+        guard tries > 0, running.contains(where: { !$0.isTerminated }) else { return openScreenSaverSettings() }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { self.openSaverPane(after: running, tries: tries - 1) }
+    }
+
+    private func sendSaverState() {
+        let installed = fm.fileExists(atPath: installedSaver.path)
+        webView?.evaluateJavaScript("window.setSaverState && window.setSaverState({installed:\(installed)})")
+    }
+
+    // MARK: Guided setup
+
+    /// The first screen of the app: the rest opens once every step is finished.
+    private var setupDone: Bool { UserDefaults.standard.bool(forKey: Pref.setupDone) }
+
+    /// Until setup is finished, the app menu only offers setup, Uninstall and Quit.
+    func validateMenuItem(_ item: NSMenuItem) -> Bool {
+        setupDone || item.action == #selector(showSetup) || item.action == #selector(uninstall)
+    }
+
+    /// A small window that floats beside System Settings, so the instructions stay visible while you follow them.
+    @objc private func showSetup() {
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+        if let w = setupWindow { return w.makeKeyAndOrderFront(nil) }
+        let size = NSSize(width: 440, height: 600)
+        let w = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: setupDone ? [.titled, .closable, .fullSizeContentView] : [.titled, .fullSizeContentView], backing: .buffered, defer: false)
+        w.title = "Set Up Agent Aquarium"
+        w.titleVisibility = .hidden
+        w.titlebarAppearsTransparent = true
+        w.isReleasedWhenClosed = false
+        w.level = .floating
+        w.delegate = self
+        let area = (NSScreen.main ?? NSScreen.screens[0]).visibleFrame
+        w.setFrameOrigin(NSPoint(x: area.minX + 32, y: area.midY - size.height / 2))
+        let config = WKWebViewConfiguration()
+        config.userContentController.add(self, name: "setup")
+        let web = FirstClickWebView(frame: w.contentView!.bounds, configuration: config)
+        web.autoresizingMask = [.width, .height]
+        web.navigationDelegate = self
+        web.setValue(false, forKey: "drawsBackground")
+        w.contentView!.addSubview(web)
+        web.load(URLRequest(url: setupURL))
+        setupWindow = w
+        setupWeb = web
+        setupTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in self?.sendSetupState() }
+        w.makeKeyAndOrderFront(nil)
+    }
+
+    private func sendSetupState() {
+        let claude = hookState() == .current, saver = fm.fileExists(atPath: installedSaver.path)
+        setupWeb?.evaluateJavaScript("window.setSetupState({claude:\(claude),saver:\(saver),required:\(!setupDone),pane:\"\(saverPaneName)\"})")
+    }
+
+    private func handleSetup(_ action: String) {
+        let d = UserDefaults.standard
+        switch action {
+        case "state": sendSetupState()
+        case "connect": // the page lists what this changes, so the click is the consent
+            d.set(false, forKey: Pref.hooksDeclined)
+            d.set(true, forKey: Pref.usageAsked)
+            setHooks(true)
+            sendSetupState()
+        case "skipConnect": d.set(true, forKey: Pref.hooksDeclined)
+        case "saver":
+            installScreenSaver()
+            reopenScreenSaverSettings()
+        case "readd": readdScreenSaver()
+        case "lock": NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.Lock-Screen-Settings.extension")!)
+        case "finishPreview": previewAfterSetup = true; finishSetup()
+        case "finish": finishSetup()
+        case "quit": NSApp.terminate(nil)
+        default: break
+        }
+    }
+
+    private func finishSetup() {
+        UserDefaults.standard.set(true, forKey: Pref.setupDone)
+        UserDefaults.standard.set(true, forKey: Pref.saverPrompted)
+        startStatusMenu()
+        setupWindow?.close()
+    }
+
+    /// The window only closes once setup is finished, or when someone who already finished it reruns it.
+    private func setupClosed() {
+        if hookState() == .none { UserDefaults.standard.set(true, forKey: Pref.hooksDeclined) }
+        setupTimer?.invalidate()
+        setupTimer = nil
+        setupWeb?.configuration.userContentController.removeScriptMessageHandler(forName: "setup")
+        let showPreviewNext = previewAfterSetup
+        previewAfterSetup = false
+        DispatchQueue.main.async {
+            self.setupWindow = nil
+            self.setupWeb = nil
+            self.openSettings()
+            if showPreviewNext { self.showPreview() }
+        }
     }
 
     // MARK: Claude Code hooks
@@ -924,7 +1081,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKNavigationDelegate, 
         hooksItem.target = self
         usageItem = appMenu.addItem(withTitle: "Show Plan Usage", action: #selector(toggleUsage), keyEquivalent: "")
         usageItem.target = self
-        appMenu.addItem(withTitle: "Screen Saver Settings…", action: #selector(openScreenSaverSettings), keyEquivalent: "").target = self
+        appMenu.addItem(withTitle: "\(saverPaneName) Settings…", action: #selector(openScreenSaverSettings), keyEquivalent: "").target = self
+        appMenu.addItem(withTitle: "Re-add Screen Saver", action: #selector(readdScreenSaver), keyEquivalent: "").target = self
+        appMenu.addItem(withTitle: "Run Setup Again…", action: #selector(showSetup), keyEquivalent: "").target = self
         let displayItem = appMenu.addItem(withTitle: "Always-On Display", action: nil, keyEquivalent: "")
         displayMenu = NSMenu(title: "Always-On Display")
         displayMenu.delegate = self

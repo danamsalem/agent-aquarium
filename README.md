@@ -90,8 +90,8 @@ Try them all live on the [website](https://agentaquarium.danamsalem.com).
 >
 > Or run this in Terminal instead: `xattr -dr com.apple.quarantine "/Applications/Agent Aquarium.app"`
 
-4. Click **Connect Claude Code** when asked, then restart any Claude Code sessions that are already open. (This lets Claude Code tell the app what it's doing. Your settings are backed up first.)
-5. Choose **Agent Aquarium** in **System Settings → Screen Saver** (under Other). To keep your Mac locked while it shows, set Lock Screen → "Require password after screen saver begins" to **Immediately**.
+4. Follow the short setup. It connects Claude Code (your settings are backed up first) and opens the right pages to pick Agent Aquarium in **System Settings → Wallpaper** (**Screen Saver** on older macOS) and set your Mac to lock **Immediately**.
+5. Restart any Claude Code sessions that are already open.
 
 **Updating?** When a new version is out, the menu bar fish and Settings tell you. Replace the app in Applications with the new one; your settings stay.
 

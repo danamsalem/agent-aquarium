@@ -12,7 +12,7 @@ const { spawn, execFileSync } = require("child_process");
 
 const ROOT = __dirname;
 const SRC = path.join(ROOT, "src");
-const SOURCES = ["index.html", "settings.html", "server.js", "calendar.js", "google.js", "battery.js", "hook.js", "statusline.js", "setup-hooks.js"];
+const SOURCES = ["index.html", "settings.html", "setup.html", "server.js", "calendar.js", "google.js", "battery.js", "hook.js", "statusline.js", "setup-hooks.js"];
 const TOOLS = ["check.js", "macos/bundle.js"];
 let failed = 0;
 
@@ -58,7 +58,7 @@ async function serves(port) {
       up = await get(port, "/status").then(() => true, () => false);
     }
     if (!up) return fail(`server did not start${stderr ? `: ${stderr.trim()}` : ""}`);
-    for (const [p, expect] of [["/", "<html"], ["/settings", "<html"], ["/status", '"sessions"']]) {
+    for (const [p, expect] of [["/", "<html"], ["/settings", "<html"], ["/setup", "<html"], ["/thumbnail.png", "PNG"], ["/status", '"sessions"']]) {
       const r = await get(port, p);
       if (r.status === 200 && r.body.includes(expect)) ok(`server GET ${p}`);
       else fail(`server GET ${p}: ${r.status}`);

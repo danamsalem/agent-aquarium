@@ -10,6 +10,7 @@ Thanks for helping! Agent Aquarium is a small app: a few JavaScript files, two H
 src/                      Everything the app runs, in plain JS and HTML (no framework, no npm dependencies)
   index.html              The lock screen: themes, the crab, session cards, task carousel, message, calendar, usage
   settings.html           The settings page shown in the app's window
+  setup.html              The first-run guided setup
   server.js               Local server on 127.0.0.1:4777: serves the pages, /status, /config, calendars
   hook.js                 Claude Code hook: turns hook events into one state file per session
   setup-hooks.js          Adds/removes the hooks and the status line wrapper in ~/.claude/settings.json

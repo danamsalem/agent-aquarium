@@ -17,7 +17,7 @@ Screensaver / settings window / menu bar ◄── http://127.0.0.1:4777 ◄─�
 
 ### What it adds to Claude Code (`~/.claude/settings.json`)
 
-Only after you click **Connect Claude Code**.
+Only after you click **Connect Claude Code** in the setup or the app menu.
 
 - A backup is saved first, once, as `~/.claude/settings.json.bak-lockscreen`.
 - **Hooks:** one command hook (`"…/Agent Aquarium.app/Contents/MacOS/aquarium-node" "agent-aquarium-hook"`, 5 s timeout) on each of these events: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `PermissionRequest`, `Notification`, `PreCompact`, `Stop`, `SessionEnd`. The tool events use the matcher `*`. The hook reads the event, writes a small state file and exits 0. It never blocks Claude or prints anything.
@@ -41,7 +41,7 @@ The hook doesn't copy your code, your prompts or Claude's replies. It reads the 
 ### The local server
 
 - Listens on **`127.0.0.1:4777` only** (loopback), so other machines on your network can't reach it.
-- `GET /` (lock screen page), `GET /settings` (settings page), `GET /status` (sessions, config, calendar, usage as JSON).
+- `GET /` (lock screen page), `GET /settings` (settings page), `GET /setup` (first-run setup), `GET /thumbnail.png` (the screen saver's tile), `GET /status` (sessions, config, calendar, usage as JSON).
 - `POST /config`, `/calendars/add|remove|sync`, `/google/connect|calendars|disconnect`, `/update/open`. These accept only `Content-Type: application/json` bodies under 20 KB, so a web page in your browser can't send them without a CORS preflight, which the server doesn't allow.
 - Requests whose Host header isn't 127.0.0.1 or localhost are refused, which blocks DNS-rebinding attacks.
 - `GET /google/callback`: the end of the Google sign-in (loopback OAuth with PKCE).
